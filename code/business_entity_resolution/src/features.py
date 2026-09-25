@@ -3,6 +3,7 @@ import numpy as np
 import polars as pl
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from common import N_THREADS
 
@@ -27,21 +28,25 @@ _STRING_SCORERS = [
 
 _SET_FEATURES = [
     "core_jacc", "core_inter", "q_core_cov", "p_core_cov", "first_tok_eq", "any_tok_eq",
-    "num_jacc", "num_inter", "house_eq", "q_nnum", "p_nnum",
-    "addr_tok_jacc", "addr_tok_inter",
+    "num_jacc", "num_inter", "house_eq", "house_conflict", "q_nnum", "p_nnum",
+    "addr_tok_jacc", "addr_tok_inter", "q_addr_cov", "p_addr_cov",
     "q_core_len", "p_core_len", "core_len_diff", "q_core_ntok", "p_core_ntok",
     "q_addr_len", "p_addr_len", "is_domain", "nonlatin", "addr_empty",
 ]
 
+# IDF-weighted word cosines (name core / address), computed for every candidate pair.
+_WCOS = [("name_wcos", "core"), ("addr_wcos", "naddr")]
+
 
 def group_cols(channel_names):
-    return ["name_ratio", "core_tset", "core_jw", "addr_ratio", "addr_tset", "combo"] + [f"{c}_cos" for c in channel_names]
+    return (["name_ratio", "core_tset", "core_jw", "addr_ratio", "addr_tset", "name_wcos", "addr_wcos", "combo"]
+            + [f"{c}_cos" for c in channel_names])
 
 
 def feature_names(channel_names):
     g = group_cols(channel_names)
     return (
-        [n for n, _, _ in _STRING_SCORERS]
+        [n for n, _, _ in _STRING_SCORERS] + [n for n, _ in _WCOS]
         + [f"{c}_cos" for c in channel_names] + [f"{c}_rank" for c in channel_names] + ["n_hit"]
         + _SET_FEATURES
         + [f"{c}_maxq" for c in g] + [f"{c}_dmax" for c in g]
@@ -49,11 +54,25 @@ def feature_names(channel_names):
     )
 
 
+def fit_tfidf(q_df: pl.DataFrame, p_df: pl.DataFrame) -> dict:
+    """Word TF-IDF spaces (IDF from the pool) for name cores and addresses, L2-normalised rows."""
+    ctx = {}
+    for name, col in _WCOS:
+        vec = TfidfVectorizer(token_pattern=r"\S+", min_df=2, sublinear_tf=True, dtype=np.float32)
+        ctx[f"P_{name}"] = vec.fit_transform(p_df[col].to_list()).tocsr()
+        ctx[f"Q_{name}"] = vec.transform(q_df[col].to_list()).tocsr()
+    return ctx
+
+
+def _rowdot(A, B, ai, bi):
+    return np.asarray(A[ai].multiply(B[bi]).sum(axis=1), dtype=np.float32).ravel()
+
+
 def _tok(col):
     return pl.col(col).str.split(" ").list.eval(pl.element().filter(pl.element() != ""))
 
 
-def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names) -> pl.DataFrame:
+def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names, tfidf) -> pl.DataFrame:
     """cand has q/p global indices + blocking scores; q_df/p_df are the normalised frames."""
     qi = cand["q"].to_numpy()
     pi = cand["p"].to_numpy()
@@ -61,12 +80,14 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
     ps = p_df.select(P_COLS)[pi].rename({c: f"p_{c}" for c in P_COLS})
     df = pl.concat([cand, qs, ps], how="horizontal")
 
-    # 1) string similarity scores (parallel C++ via rapidfuzz)
+    # 1) string similarity scores (parallel C++ via rapidfuzz) + IDF-weighted word cosines
     new_cols = {}
     for name, col, scorer in _STRING_SCORERS:
         a = df[f"q_{col}"].to_list()
         b = df[f"p_{col}"].to_list()
         new_cols[name] = process.cpdist(a, b, scorer=scorer, workers=N_THREADS, dtype=np.float32)
+    for name, _ in _WCOS:
+        new_cols[name] = _rowdot(tfidf[f"Q_{name}"], tfidf[f"P_{name}"], qi, pi)
     df = df.with_columns([pl.Series(k, v) for k, v in new_cols.items()])
 
     # 2) token / number set features (vectorised polars list ops)
@@ -74,6 +95,7 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
     qa, pa = _tok("q_naddr"), _tok("p_naddr")
     cos_sum = pl.sum_horizontal([pl.col(f"{c}_cos") for c in channel_names])
     n_hit = pl.sum_horizontal([(pl.col(f"{c}_rank") < 99).cast(pl.Float32) for c in channel_names])
+    q_first_num, p_first_num = pl.col("q_nums").list.first(), pl.col("p_nums").list.first()
     df = df.with_columns(
         core_inter=qc.list.set_intersection(pc).list.len().cast(pl.Float32),
         q_core_ntok=qc.list.len().cast(pl.Float32),
@@ -82,7 +104,8 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
         num_inter=pl.col("q_nums").list.set_intersection(pl.col("p_nums")).list.len().cast(pl.Float32),
         q_nnum=pl.col("q_nums").list.len().cast(pl.Float32),
         p_nnum=pl.col("p_nums").list.len().cast(pl.Float32),
-        house_eq=(pl.col("q_nums").list.first() == pl.col("p_nums").list.first()).cast(pl.Float32),
+        house_eq=(q_first_num == p_first_num).cast(pl.Float32),
+        house_conflict=(q_first_num != p_first_num).cast(pl.Float32),
         addr_tok_inter=qa.list.set_intersection(pa).list.len().cast(pl.Float32),
         q_addr_ntok=qa.list.len().cast(pl.Float32),
         p_addr_ntok=pa.list.len().cast(pl.Float32),
@@ -101,10 +124,13 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
         any_tok_eq=(pl.col("core_inter") > 0).cast(pl.Float32),
         num_jacc=pl.col("num_inter") / (pl.col("q_nnum") + pl.col("p_nnum") - pl.col("num_inter")).clip(1),
         addr_tok_jacc=pl.col("addr_tok_inter") / (pl.col("q_addr_ntok") + pl.col("p_addr_ntok") - pl.col("addr_tok_inter")).clip(1),
+        q_addr_cov=pl.col("addr_tok_inter") / pl.col("q_addr_ntok").clip(1),
+        p_addr_cov=pl.col("addr_tok_inter") / pl.col("p_addr_ntok").clip(1),
         core_len_diff=(pl.col("q_core_len") - pl.col("p_core_len")).abs(),
         house_eq=pl.col("house_eq").fill_null(0.0),
+        house_conflict=pl.col("house_conflict").fill_null(0.0),
         first_tok_eq=pl.col("first_tok_eq").fill_null(0.0),
-        combo=(pl.col("core_tset") + pl.col("addr_tset")) / 200.0 + cos_sum,
+        combo=(pl.col("core_tset") + pl.col("addr_tset")) / 200.0 + cos_sum + pl.col("name_wcos") + pl.col("addr_wcos"),
     )
 
     # 3) context features relative to the other candidates of the same query
@@ -118,7 +144,7 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
     return df.select(["q", "p"] + [pl.col(c).cast(pl.Float32) for c in feature_names(channel_names)])
 
 
-def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names,
+def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names, tfidf,
                            out_prefix: str, q_chunk: int = 40_000, log=None):
     """build_features over ranges of query indices, writing one parquet file per chunk.
 
@@ -132,7 +158,8 @@ def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.Data
         part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + q_chunk))
         if part.height == 0:
             continue
-        feats = build_features(part.drop("label") if "label" in part.columns else part, q_df, p_df, channel_names)
+        feats = build_features(part.drop("label") if "label" in part.columns else part, q_df, p_df,
+                               channel_names, tfidf)
         if "label" in part.columns:
             feats = feats.with_columns(part["label"])
         path = f"{out_prefix}_{i:03d}.parquet"

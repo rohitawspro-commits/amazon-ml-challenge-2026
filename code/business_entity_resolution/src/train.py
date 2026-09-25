@@ -13,8 +13,8 @@ import numpy as np
 import polars as pl
 
 from blocking import DEFAULT_CHANNELS, block_all
-from common import MODELS, WORK, load_ground_truth, load_sources, timer
-from features import build_features_chunked, feature_names
+from common import MODELS, WORK, load_ground_truth, load_s1, load_sources, timer
+from features import build_features_chunked, feature_names, fit_tfidf
 from metrics import search_threshold
 from normalize import NORM_VERSION, normalize_frame
 
@@ -25,9 +25,10 @@ def get_args():
     ap.add_argument("--n-val", type=int, default=50_000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--channels", default=None, help="JSON list of channel specs (default: blocking.DEFAULT_CHANNELS)")
-    ap.add_argument("--rounds", type=int, default=2000)
+    ap.add_argument("--rounds", type=int, default=3000)
     ap.add_argument("--tag", default="v1")
-    ap.add_argument("--reuse-cand", action="store_true", help="reuse cached candidates of this tag (skip blocking)")
+    ap.add_argument("--reuse-cand", action="store_true", help="reuse cached candidates (skip blocking)")
+    ap.add_argument("--cand-tag", default=None, help="tag whose cached candidates to reuse (default: --tag)")
     args = ap.parse_args()
     args.channels = json.loads(args.channels) if args.channels else DEFAULT_CHANNELS
     return args
@@ -49,7 +50,7 @@ def main():
     names = [c["name"] for c in cfg.channels]
     FEATURES = feature_names(names)
     t0 = time.time()
-    s1, _ = load_sources("train")
+    s1 = load_s1("train")
     pool = load_pool_normalised("train")
     gt = load_ground_truth()
 
@@ -65,7 +66,7 @@ def main():
     truth_pairs = gt.join(qid, on="source1_entity_id").join(pid, on="p_id").select("q", "p")
     n_truth = truth_pairs.height
 
-    cand_path = f"{WORK}/train_cand_{cfg.tag}.parquet"
+    cand_path = f"{WORK}/train_cand_{cfg.cand_tag or cfg.tag}.parquet"
     if cfg.reuse_cand and os.path.exists(cand_path):
         cand = pl.read_parquet(cand_path)
         print(f"[blocking] reusing {cand.height:,} cached candidates from {cand_path}", flush=True)
@@ -81,20 +82,20 @@ def main():
           f"| recall={found / n_truth:.4f} | per channel: {per_ch}", flush=True)
 
     n_cand = cand.height
+    with timer("tf-idf spaces"):
+        tfidf = fit_tfidf(q, pool)
     with timer("features"):
-        paths = build_features_chunked(cand, q, pool, names, out_prefix=f"{WORK}/train_feats_{cfg.tag}",
+        paths = build_features_chunked(cand, q, pool, names, tfidf, out_prefix=f"{WORK}/train_feats_{cfg.tag}",
                                        log=lambda m: print(m, flush=True))
-    del pool, cand
-    split_df = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "split")
-    feats = pl.read_parquet(paths).join(split_df, on="q")
-    tr_mask = (feats["split"] == "train").to_numpy()
-    y_all = feats["label"].to_numpy()
-    X_all = feats.select(FEATURES).to_numpy()
-    va = feats.filter(~pl.Series(tr_mask)).select("q", "p")
-    del feats
-    X_tr, y_tr = X_all[tr_mask], y_all[tr_mask]
-    X_va, y_va = X_all[~tr_mask], y_all[~tr_mask]
-    del X_all
+    del pool, cand, tfidf
+    # queries 0..n_train-1 are the training split, the rest validation (see sampling above)
+    lf = pl.scan_parquet(paths)
+    is_tr = pl.col("q") < cfg.n_train
+    X_tr = lf.filter(is_tr).select(FEATURES).collect().to_numpy()
+    y_tr = lf.filter(is_tr).select("label").collect()["label"].to_numpy()
+    X_va = lf.filter(~is_tr).select(FEATURES).collect().to_numpy()
+    va = lf.filter(~is_tr).select("q", "p", "label").collect()
+    y_va = va["label"].to_numpy()
     print(f"[data] train pairs={len(y_tr):,} (pos={y_tr.mean():.3f}) | val pairs={len(y_va):,}", flush=True)
 
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,
@@ -114,6 +115,7 @@ def main():
     val_q = q.with_row_index("q").filter(pl.col("split") == "val").select(pl.col("q").cast(pl.Int32))
     truth = val_q.join(truth_pairs.group_by("q").agg(pl.col("p").alias("truth")), on="q", how="left") \
         .with_columns(pl.col("truth").fill_null([]))
+    va_scored.write_parquet(f"{WORK}/val_scored_{cfg.tag}.parquet")
     best, rows = search_threshold(va_scored, truth)
     one, thr, f05, m = best
     print(f"[val] best macro-F0.5={f05:.4f} @ thr={thr:.2f} one_to_one={one} | {m}")

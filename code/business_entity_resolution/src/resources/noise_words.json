@@ -1,0 +1,41 @@
+{
+ "India": [
+  "as",
+  "dr",
+  "holdings",
+  "id",
+  "infratech",
+  "mr",
+  "overseas"
+ ],
+ "US": [
+  "as",
+  "central",
+  "downtown",
+  "east",
+  "eastgate",
+  "fka",
+  "greater",
+  "holdings",
+  "id",
+  "lakeside",
+  "midtown",
+  "north",
+  "northside",
+  "riverside",
+  "south",
+  "southside",
+  "uptown",
+  "westgate"
+ ],
+ "France": [
+  "as",
+  "associes",
+  "developpement",
+  "distribution",
+  "groupe",
+  "holding",
+  "international",
+  "participations"
+ ]
+}

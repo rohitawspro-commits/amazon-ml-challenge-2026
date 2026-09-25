@@ -24,6 +24,10 @@ def read_tsv(path: str) -> pl.DataFrame:
     ).fill_null("")
 
 
+def load_s1(split: str) -> pl.DataFrame:
+    return read_tsv(f"{DATA}/{split}/{split}_source1.tsv")
+
+
 def load_sources(split: str):
     """Return (source1, pool) where pool = source2 + source3 stacked, for 'train' or 'test'."""
     s1 = read_tsv(f"{DATA}/{split}/{split}_source1.tsv")

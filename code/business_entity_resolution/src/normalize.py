@@ -1,8 +1,9 @@
 """Country-agnostic normalisation of business names and addresses.
 
 Everything here is deterministic string processing driven only by the record itself
-(no external lookups). Per-country tables (state abbreviations) are applied through a
-lookup with an empty fallback, so unseen countries simply skip that step.
+(no external lookups). Per-country tables (state / region names, address abbreviations,
+learned name-noise words) are applied through lookups with an empty fallback, so an unseen
+country simply skips those steps.
 """
 import json
 import os
@@ -12,12 +13,24 @@ from multiprocessing import Pool
 import polars as pl
 from unidecode import unidecode
 
-NORM_VERSION = "v2"  # bump when normalisation changes so cached normalised frames are rebuilt
+NORM_VERSION = "v3"  # bump when normalisation changes so cached normalised frames are rebuilt
+
+_RES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+
+
+def _load_json(name, default):
+    path = os.path.join(_RES_DIR, name)
+    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else default
+
 
 # Native-script word -> Latin word dictionary learned from the training ground truth
 # (see build_translit.py). Falls back to unidecode for unknown words.
-_RES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "translit_map.json")
-TRANSLIT = json.load(open(_RES, encoding="utf-8")) if os.path.exists(_RES) else {}
+TRANSLIT = _load_json("translit_map.json", {})
+# Per-country name tokens that Sources 2/3 add far more often than Source 1 contains them
+# (e.g. "Holdings", "Participations", honorifics) - learned from unlabelled token statistics
+# (see build_noise_words.py).
+NOISE = {k: set(v) for k, v in _load_json("noise_words.json", {}).items()}
+_EMPTY = frozenset()
 _NATIVE_RE = re.compile(r"[ऀ-෿]")
 
 
@@ -27,12 +40,17 @@ def transliterate(s: str) -> str:
         s = " ".join(TRANSLIT.get(t.strip(".,()-:'\""), t) if _NATIVE_RE.search(t) else t for t in s.split())
     return unidecode(s)
 
+
 # Legal-form and filler tokens removed to obtain the "core" name.
 LEGAL = set(
     "llc inc incorporated corp corporation co company ltd limited pvt private plc llp lp pc pllc "
-    "pty sarl sas sa eurl sasu snc sci scp gmbh ag bv nv ltee lc pra li opc".split()
+    "pty sarl sas sa eurl sasu snc sci scp gmbh ag bv nv ltee lc pra li opc "
+    "cie compagnie ets etablissements fils freres frs sarlu selarl gie earl gaec scea sccv scm sca".split()
 )
-FILLER = set("the and of services service center centre group dba formerly sri smt shri ms messrs m/s".split())
+FILLER = set(
+    "the and of services service center centre group dba formerly aka doing sri smt shri ms messrs "
+    "et de du des la le les l d au aux en com".split()
+)
 
 US_STATES = {
     "al": "alabama", "ak": "alaska", "az": "arizona", "ar": "arkansas", "ca": "california",
@@ -59,7 +77,12 @@ IN_STATES = {
     "an": "andaman and nicobar islands", "ld": "lakshadweep", "orissa": "odisha",
     "new delhi": "delhi", "bengaluru": "bangalore", "mumbai suburban": "mumbai",
 }
-STATE_MAPS = {"US": US_STATES, "India": IN_STATES}
+# French departments -> region (records use either level for the same place).
+FR_REGIONS = {
+    "nord": "hauts de france", "pas de calais": "hauts de france",
+    "gironde": "nouvelle aquitaine", "loire atlantique": "pays de la loire",
+}
+STATE_MAPS = {"US": US_STATES, "India": IN_STATES, "France": FR_REGIONS}
 
 # Native-script state names seen in Indian addresses -> English (applied before transliteration).
 INDIC_STATES = {
@@ -88,6 +111,14 @@ ADDR_ABBR = {
     "dist": "district", "tal": "taluka", "vill": "village", "po": "post", "hno": "house",
     "rte": "route", "cres": "crescent", "sq": "square", "chs": "chs", "ext": "extension",
     "ph": "phase", "nagar": "nagar", "clny": "colony", "mkt": "market", "gr": "ground",
+    # "number" markers carry no information ("No. 131", "N° 17", "Nº 1")
+    "no": "", "ndeg": "", "nos": "",
+}
+# Country-specific overrides, found by comparing token frequencies of Source 1 (full forms)
+# with Sources 2/3 (abbreviated forms) on unlabelled French records.
+ADDR_OVERRIDES = {
+    "France": {"r": "rue", "q": "quai", "imp": "impasse", "all": "allee", "ch": "chemin", "crs": "cours",
+               "psg": "passage", "st": "saint", "res": "residence", "n": ""},
 }
 
 _DOMAIN_RE = re.compile(r"(?:https?://)?(?:www\.)?([a-z0-9-]{2,})\.(?:co\.in|co\.uk|com|in|org|net|co|biz|info|us|fr|io)\b")
@@ -99,8 +130,24 @@ _NUM_RE = re.compile(r"\d+")
 _COMP_SPLIT_RE = re.compile(r"[,;|]")
 
 
-def norm_name(raw: str):
-    """Return (full_norm, core, core_nospace, is_domain, nonlatin)."""
+def _join_letters(toks):
+    """Join runs of single letters: 's a s' -> 'sas', 'j m' -> 'jm'."""
+    out, run = [], []
+    for t in toks:
+        if len(t) == 1 and t.isalpha():
+            run.append(t)
+            continue
+        if run:
+            out.append("".join(run))
+            run = []
+        out.append(t)
+    if run:
+        out.append("".join(run))
+    return out
+
+
+def name_tokens(raw: str):
+    """Return (tokens, is_domain, nonlatin) of a cleaned, transliterated business name."""
     nonlatin = 0 if raw.isascii() else 1
     s = raw if not nonlatin else transliterate(raw)
     s = s.lower().replace("&", " and ")
@@ -113,11 +160,18 @@ def norm_name(raw: str):
             s = _DOT_ABBR_RE.sub(r"\1", s)
     s = _NONALNUM_RE.sub(" ", s).strip()
     s = _FIVE_RE.sub("s", _ZERO_RE.sub("o", s))
-    toks = s.split()
-    core = [t for t in toks if t not in LEGAL and t not in FILLER]
+    return _join_letters(s.split()), is_domain, nonlatin
+
+
+def norm_name(raw: str, country: str = ""):
+    """Return (full_norm, core, core_nospace, is_domain, nonlatin)."""
+    toks, is_domain, nonlatin = name_tokens(raw)
+    noise = NOISE.get(country, _EMPTY)
+    ctok = country.lower()
+    core = [t for t in toks if t not in LEGAL and t not in FILLER and t not in noise and t != ctok]
     core = [t for i, t in enumerate(core) if i == 0 or t != core[i - 1]]  # drop stutter duplicates
     if not core:
-        core = toks
+        core = [t for t in toks if t not in LEGAL] or toks
     full = " ".join(toks)
     core_s = " ".join(core)
     return full, core_s, core_s.replace(" ", ""), is_domain, nonlatin
@@ -134,6 +188,7 @@ def norm_addr(raw: str, country: str):
         s = transliterate(s)
     s = s.lower()
     smap = STATE_MAPS.get(country, {})
+    over = ADDR_OVERRIDES.get(country, {})
     out = []
     for comp in _COMP_SPLIT_RE.split(s):
         c = _NONALNUM_RE.sub(" ", comp).strip()
@@ -142,15 +197,16 @@ def norm_addr(raw: str, country: str):
         if c in smap:
             out.append(smap[c])
             continue
-        out.append(" ".join(ADDR_ABBR.get(t, t) for t in c.split()))
-    return " ".join(out), nums
+        words = (over[t] if t in over else ADDR_ABBR.get(t, t) for t in c.split())
+        out.append(" ".join(w for w in words if w))
+    return " ".join(w for w in out if w), nums
 
 
 def _norm_chunk(args):
     names, addrs, countries = args
     rows = []
     for n, a, c in zip(names, addrs, countries):
-        full, core, core_ns, is_dom, nonlat = norm_name(n)
+        full, core, core_ns, is_dom, nonlat = norm_name(n, c)
         naddr, nums = norm_addr(a, c)
         rows.append((full, core, core_ns, is_dom, nonlat, naddr, nums, int(a.strip() == "")))
     return rows

@@ -72,14 +72,14 @@ def block_country(q_df: pl.DataFrame, p_df: pl.DataFrame, channels) -> pl.DataFr
     )
 
 
-def block_all(q_df: pl.DataFrame, p_df: pl.DataFrame, channels=None) -> pl.DataFrame:
-    """Run blocking per country (country treated as an open set of labels)."""
+def block_all(q_df: pl.DataFrame, p_df: pl.DataFrame, channels=None, countries=None) -> pl.DataFrame:
+    """Run blocking per country (country treated as an open set of labels); optionally only `countries`."""
     channels = channels or DEFAULT_CHANNELS
     # keep only what blocking needs so per-country filters / TF-IDF do not duplicate the whole frames
     q_df = q_df.select(["country"] + BLOCK_COLS).with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
     p_df = p_df.select(["country"] + BLOCK_COLS).with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
     parts = []
-    for country in q_df["country"].unique().sort().to_list():
+    for country in (countries or q_df["country"].unique().sort().to_list()):
         qc = q_df.filter(pl.col("country") == country)
         pc = p_df.filter(pl.col("country") == country)
         print(f"[block] country={country!r}: {qc.height:,} queries, {pc.height:,} pool records", flush=True)
