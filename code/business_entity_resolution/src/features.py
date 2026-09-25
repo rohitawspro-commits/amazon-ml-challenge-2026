@@ -116,3 +116,18 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
     ).with_columns([(pl.col(c) - pl.col(f"{c}_maxq")).alias(f"{c}_dmax") for c in g])
 
     return df.select(["q", "p"] + feature_names(channel_names))
+
+
+def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names,
+                           q_chunk: int = 40_000, log=None) -> pl.DataFrame:
+    """build_features over ranges of query indices, bounding peak memory (strings + list columns)."""
+    parts = []
+    n_q = int(cand["q"].max()) + 1 if cand.height else 0
+    for start in range(0, n_q, q_chunk):
+        part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + q_chunk))
+        if part.height == 0:
+            continue
+        parts.append(build_features(part, q_df, p_df, channel_names))
+        if log:
+            log(f"    features: queries {min(start + q_chunk, n_q):,}/{n_q:,} ({sum(p.height for p in parts):,} pairs)")
+    return pl.concat(parts)

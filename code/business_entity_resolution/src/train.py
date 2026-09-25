@@ -14,7 +14,7 @@ import polars as pl
 
 from blocking import DEFAULT_CHANNELS, block_all
 from common import MODELS, WORK, load_ground_truth, load_sources, timer
-from features import build_features, feature_names
+from features import build_features_chunked, feature_names
 from metrics import search_threshold
 from normalize import NORM_VERSION, normalize_frame
 
@@ -27,6 +27,7 @@ def get_args():
     ap.add_argument("--channels", default=None, help="JSON list of channel specs (default: blocking.DEFAULT_CHANNELS)")
     ap.add_argument("--rounds", type=int, default=2000)
     ap.add_argument("--tag", default="v1")
+    ap.add_argument("--reuse-cand", action="store_true", help="reuse cached candidates of this tag (skip blocking)")
     args = ap.parse_args()
     args.channels = json.loads(args.channels) if args.channels else DEFAULT_CHANNELS
     return args
@@ -58,31 +59,39 @@ def main():
     with timer(f"normalise {q.height:,} queries"):
         q = normalize_frame(q)
 
-    with timer("blocking"):
-        cand = block_all(q, pool, cfg.channels)
-
     # labels: (q gidx, p gidx) pairs from ground truth restricted to sampled queries
     qid = q.select(pl.col("entity_id").alias("source1_entity_id"), pl.int_range(pl.len()).cast(pl.Int32).alias("q"))
     pid = pool.select(pl.col("entity_id").alias("p_id"), pl.int_range(pl.len()).cast(pl.Int32).alias("p"))
     truth_pairs = gt.join(qid, on="source1_entity_id").join(pid, on="p_id").select("q", "p")
-    cand = cand.join(truth_pairs.with_columns(label=pl.lit(1, dtype=pl.Int8)), on=["q", "p"], how="left") \
-        .with_columns(pl.col("label").fill_null(0))
     n_truth = truth_pairs.height
+
+    cand_path = f"{WORK}/train_cand_{cfg.tag}.parquet"
+    if cfg.reuse_cand and os.path.exists(cand_path):
+        cand = pl.read_parquet(cand_path)
+        print(f"[blocking] reusing {cand.height:,} cached candidates from {cand_path}", flush=True)
+    else:
+        with timer("blocking"):
+            cand = block_all(q, pool, cfg.channels)
+        cand = cand.join(truth_pairs.with_columns(label=pl.lit(1, dtype=pl.Int8)), on=["q", "p"], how="left") \
+            .with_columns(pl.col("label").fill_null(0))
+        cand.write_parquet(cand_path)
     found = int(cand["label"].sum())
     per_ch = " | ".join(f"{n}={int(cand.filter(pl.col(f'{n}_rank') < 99)['label'].sum()) / n_truth:.4f}" for n in names)
     print(f"[blocking] candidates={cand.height:,} ({cand.height / q.height:.1f}/query) | truth pairs={n_truth:,} "
           f"| recall={found / n_truth:.4f} | per channel: {per_ch}", flush=True)
-    cand.write_parquet(f"{WORK}/train_cand_{cfg.tag}.parquet")
 
     with timer("features"):
-        feats = build_features(cand.drop("label"), q, pool, names).with_columns(cand["label"])
+        feats = build_features_chunked(cand.drop("label"), q, pool, names, log=lambda m: print(m, flush=True))
+        feats = feats.join(cand.select("q", "p", "label"), on=["q", "p"])
+    del pool, cand
     feats = feats.join(q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "split"), on="q")
     feats.write_parquet(f"{WORK}/train_feats_{cfg.tag}.parquet")
 
     tr = feats.filter(pl.col("split") == "train")
     va = feats.filter(pl.col("split") == "val")
-    X_tr, y_tr = tr.select(FEATURES).to_numpy(), tr["label"].to_numpy()
-    X_va, y_va = va.select(FEATURES).to_numpy(), va["label"].to_numpy()
+    X_tr, y_tr = tr.select(FEATURES).cast(pl.Float32).to_numpy(), tr["label"].to_numpy()
+    X_va, y_va = va.select(FEATURES).cast(pl.Float32).to_numpy(), va["label"].to_numpy()
+    del feats, tr
     print(f"[data] train pairs={len(y_tr):,} (pos={y_tr.mean():.3f}) | val pairs={len(y_va):,}", flush=True)
 
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,

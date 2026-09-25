@@ -26,7 +26,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--cand-tag", default=None, help="reuse cached test candidates of another tag")
-    ap.add_argument("--q-chunk", type=int, default=150_000, help="queries per feature/predict chunk")
+    ap.add_argument("--q-chunk", type=int, default=40_000, help="queries per feature/predict chunk")
     ap.add_argument("--threshold", type=float, default=None, help="override tuned threshold")
     args = ap.parse_args()
     t0 = time.time()
@@ -61,10 +61,13 @@ def main():
     n_q = q.height
     for start in range(0, n_q, args.q_chunk):
         part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
+        if part.height == 0:
+            continue
         with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
             feats = build_features(part, q, pool, names)
-            prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
+            prob = model.predict(feats.select(FEATURES).cast(pl.Float32).to_numpy(), num_threads=os.cpu_count())
             scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
+            del feats
     scored = pl.concat(scored)
     scored.write_parquet(f"{WORK}/test_scored_{args.tag}.parquet")
 
