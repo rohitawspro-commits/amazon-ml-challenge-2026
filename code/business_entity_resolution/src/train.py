@@ -16,7 +16,7 @@ from blocking import DEFAULT_CHANNELS, block_all
 from common import MODELS, WORK, load_ground_truth, load_sources, timer
 from features import build_features, feature_names
 from metrics import search_threshold
-from normalize import normalize_frame
+from normalize import NORM_VERSION, normalize_frame
 
 
 def get_args():
@@ -33,13 +33,9 @@ def get_args():
 
 
 def load_pool_normalised(split: str) -> pl.DataFrame:
-    path = f"{WORK}/{split}_pool_norm.parquet"
+    path = f"{WORK}/{split}_pool_norm_{NORM_VERSION}.parquet"
     if os.path.exists(path):
-        pool = pl.read_parquet(path)
-        if "both" not in pool.columns:  # cache written by an older version
-            pool = pool.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())
-            pool.write_parquet(path)
-        return pool
+        return pl.read_parquet(path)
     _, pool = load_sources(split)
     with timer(f"normalise {split} pool ({pool.height:,} rows)"):
         pool = normalize_frame(pool)

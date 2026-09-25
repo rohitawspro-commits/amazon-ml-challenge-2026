@@ -15,7 +15,7 @@ from common import N_THREADS, timer
 
 # name: short id used as feature prefix; col: normalised text column; analyzer/ngram: TF-IDF space.
 DEFAULT_CHANNELS = [
-    {"name": "w", "col": "both", "analyzer": "word", "ngram": [1, 1], "max_df": 0.02, "top_n": 25, "thr": 0.05},
+    {"name": "w", "col": "both", "analyzer": "word", "ngram": [1, 1], "max_df": 0.02, "top_n": 40, "thr": 0.05},
     {"name": "n3", "col": "core", "analyzer": "char_wb", "ngram": [3, 3], "max_df": 0.01, "top_n": 10, "thr": 0.10},
     {"name": "a4", "col": "naddr", "analyzer": "char_wb", "ngram": [4, 4], "max_df": 0.01, "top_n": 15, "thr": 0.10},
 ]

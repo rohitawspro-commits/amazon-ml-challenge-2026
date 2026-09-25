@@ -11,7 +11,7 @@ from blocking import block_all
 from common import MODELS, OUT, WORK, load_sources, timer
 from features import build_features
 from metrics import decide
-from normalize import normalize_frame
+from normalize import NORM_VERSION, normalize_frame
 from train import load_pool_normalised
 
 
@@ -40,11 +40,9 @@ def main():
 
     s1, _ = load_sources("test")
     pool = load_pool_normalised("test")
-    q_path = f"{WORK}/test_s1_norm.parquet"
+    q_path = f"{WORK}/test_s1_norm_{NORM_VERSION}.parquet"
     if os.path.exists(q_path):
         q = pl.read_parquet(q_path)
-        if "both" not in q.columns:
-            q = q.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())
     else:
         with timer(f"normalise test S1 ({s1.height:,} rows)"):
             q = normalize_frame(s1)

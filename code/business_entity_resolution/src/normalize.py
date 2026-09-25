@@ -4,11 +4,28 @@ Everything here is deterministic string processing driven only by the record its
 (no external lookups). Per-country tables (state abbreviations) are applied through a
 lookup with an empty fallback, so unseen countries simply skip that step.
 """
+import json
+import os
 import re
 from multiprocessing import Pool
 
 import polars as pl
 from unidecode import unidecode
+
+NORM_VERSION = "v2"  # bump when normalisation changes so cached normalised frames are rebuilt
+
+# Native-script word -> Latin word dictionary learned from the training ground truth
+# (see build_translit.py). Falls back to unidecode for unknown words.
+_RES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "translit_map.json")
+TRANSLIT = json.load(open(_RES, encoding="utf-8")) if os.path.exists(_RES) else {}
+_NATIVE_RE = re.compile(r"[ऀ-෿]")
+
+
+def transliterate(s: str) -> str:
+    """Map native-script words through the learned dictionary, then unidecode the rest."""
+    if _NATIVE_RE.search(s):
+        s = " ".join(TRANSLIT.get(t.strip(".,()-:'\""), t) if _NATIVE_RE.search(t) else t for t in s.split())
+    return unidecode(s)
 
 # Legal-form and filler tokens removed to obtain the "core" name.
 LEGAL = set(
@@ -85,7 +102,7 @@ _COMP_SPLIT_RE = re.compile(r"[,;|]")
 def norm_name(raw: str):
     """Return (full_norm, core, core_nospace, is_domain, nonlatin)."""
     nonlatin = 0 if raw.isascii() else 1
-    s = raw if not nonlatin else unidecode(raw)
+    s = raw if not nonlatin else transliterate(raw)
     s = s.lower().replace("&", " and ")
     is_domain = 0
     if "." in s:
@@ -114,7 +131,7 @@ def norm_addr(raw: str, country: str):
         for k, v in INDIC_STATES.items():
             if k in s:
                 s = s.replace(k, " " + v + " ")
-        s = unidecode(s)
+        s = transliterate(s)
     s = s.lower()
     smap = STATE_MAPS.get(country, {})
     out = []
