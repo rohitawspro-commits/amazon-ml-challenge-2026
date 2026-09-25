@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Competition data
+dataset/
+*.tsv
+*.csv
+*.zip
+
+# Generated outputs
+output/*.tsv
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
