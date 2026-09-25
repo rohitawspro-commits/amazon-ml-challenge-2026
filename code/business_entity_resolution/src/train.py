@@ -109,6 +109,7 @@ def main():
         if abs(thr_ - thr) <= 0.1 and one_ == one:
             print(f"      thr={thr_:.2f} f05={f_:.4f} P={p_:.4f} R={r_:.4f}")
     json.dump({"threshold": thr, "one_to_one": one, "val_f05": f05, "val_metrics": m,
+               "sample": {"n_train": cfg.n_train, "n_val": cfg.n_val, "seed": cfg.seed},
                "blocking": {k: getattr(cfg, k) for k in ("top_name", "top_addr", "name_thr", "addr_thr", "max_df")},
                "features": FEATURES, "best_iteration": model.best_iteration},
               open(f"{MODELS}/config_{cfg.tag}.json", "w"), indent=1)

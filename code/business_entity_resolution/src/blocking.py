@@ -66,8 +66,9 @@ def block_country(q_df: pl.DataFrame, p_df: pl.DataFrame, cfg) -> pl.DataFrame:
 
 def block_all(q_df: pl.DataFrame, p_df: pl.DataFrame, cfg) -> pl.DataFrame:
     """Run blocking per country (country treated as an open set of labels)."""
-    q_df = q_df.with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
-    p_df = p_df.with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
+    # keep only what blocking needs so per-country filters / TF-IDF do not duplicate the whole frames
+    q_df = q_df.select("country", "core", "naddr").with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
+    p_df = p_df.select("country", "core", "naddr").with_row_index("gidx").with_columns(pl.col("gidx").cast(pl.Int32))
     parts = []
     for country in q_df["country"].unique().sort().to_list():
         qc = q_df.filter(pl.col("country") == country)
