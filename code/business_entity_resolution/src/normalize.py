@@ -159,4 +159,5 @@ def normalize_frame(df: pl.DataFrame, procs: int = 4, chunk: int = 200_000) -> p
     else:
         frames = [to_frame(_norm_chunk(j)) for j in jobs()]
     extra = pl.concat(frames) if frames else pl.DataFrame(schema=schema)
-    return pl.concat([df, extra], how="horizontal")
+    out = pl.concat([df, extra], how="horizontal")
+    return out.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())

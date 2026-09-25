@@ -25,26 +25,35 @@ _STRING_SCORERS = [
     ("addr_partial", "naddr", fuzz.partial_ratio),
 ]
 
-GROUP_COLS = ["name_ratio", "core_tset", "core_jw", "addr_ratio", "addr_tset", "name_cos", "addr_cos", "combo"]
+_SET_FEATURES = [
+    "core_jacc", "core_inter", "q_core_cov", "p_core_cov", "first_tok_eq", "any_tok_eq",
+    "num_jacc", "num_inter", "house_eq", "q_nnum", "p_nnum",
+    "addr_tok_jacc", "addr_tok_inter",
+    "q_core_len", "p_core_len", "core_len_diff", "q_core_ntok", "p_core_ntok",
+    "q_addr_len", "p_addr_len", "is_domain", "nonlatin", "addr_empty",
+]
 
-FEATURES = (
-    [n for n, _, _ in _STRING_SCORERS]
-    + ["name_cos", "name_rank", "addr_cos", "addr_rank", "in_both"]
-    + ["core_jacc", "core_inter", "q_core_cov", "p_core_cov", "first_tok_eq", "any_tok_eq",
-       "num_jacc", "num_inter", "house_eq", "q_nnum", "p_nnum",
-       "addr_tok_jacc", "addr_tok_inter",
-       "q_core_len", "p_core_len", "core_len_diff", "q_core_ntok", "p_core_ntok",
-       "q_addr_len", "p_addr_len", "is_domain", "nonlatin", "addr_empty"]
-    + [f"{c}_maxq" for c in GROUP_COLS] + [f"{c}_dmax" for c in GROUP_COLS]
-    + ["n_cand_q", "combo_rank_q"]
-)
+
+def group_cols(channel_names):
+    return ["name_ratio", "core_tset", "core_jw", "addr_ratio", "addr_tset", "combo"] + [f"{c}_cos" for c in channel_names]
+
+
+def feature_names(channel_names):
+    g = group_cols(channel_names)
+    return (
+        [n for n, _, _ in _STRING_SCORERS]
+        + [f"{c}_cos" for c in channel_names] + [f"{c}_rank" for c in channel_names] + ["n_hit"]
+        + _SET_FEATURES
+        + [f"{c}_maxq" for c in g] + [f"{c}_dmax" for c in g]
+        + ["n_cand_q", "combo_rank_q"]
+    )
 
 
 def _tok(col):
     return pl.col(col).str.split(" ").list.eval(pl.element().filter(pl.element() != ""))
 
 
-def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame) -> pl.DataFrame:
+def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names) -> pl.DataFrame:
     """cand has q/p global indices + blocking scores; q_df/p_df are the normalised frames."""
     qi = cand["q"].to_numpy()
     pi = cand["p"].to_numpy()
@@ -63,6 +72,8 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame) -
     # 2) token / number set features (vectorised polars list ops)
     qc, pc = _tok("q_core"), _tok("p_core")
     qa, pa = _tok("q_naddr"), _tok("p_naddr")
+    cos_sum = pl.sum_horizontal([pl.col(f"{c}_cos") for c in channel_names])
+    n_hit = pl.sum_horizontal([(pl.col(f"{c}_rank") < 99).cast(pl.Float32) for c in channel_names])
     df = df.with_columns(
         core_inter=qc.list.set_intersection(pc).list.len().cast(pl.Float32),
         q_core_ntok=qc.list.len().cast(pl.Float32),
@@ -79,7 +90,7 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame) -
         p_core_len=pl.col("p_core").str.len_chars().cast(pl.Float32),
         q_addr_len=pl.col("q_naddr").str.len_chars().cast(pl.Float32),
         p_addr_len=pl.col("p_naddr").str.len_chars().cast(pl.Float32),
-        in_both=((pl.col("name_rank") < 99) & (pl.col("addr_rank") < 99)).cast(pl.Float32),
+        n_hit=n_hit,
         is_domain=pl.col("p_is_domain").cast(pl.Float32),
         nonlatin=pl.col("p_nonlatin").cast(pl.Float32),
         addr_empty=pl.col("p_addr_empty").cast(pl.Float32),
@@ -93,15 +104,15 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame) -
         core_len_diff=(pl.col("q_core_len") - pl.col("p_core_len")).abs(),
         house_eq=pl.col("house_eq").fill_null(0.0),
         first_tok_eq=pl.col("first_tok_eq").fill_null(0.0),
-        combo=(pl.col("core_tset") + pl.col("addr_tset")) / 200.0 + pl.col("name_cos") + pl.col("addr_cos"),
+        combo=(pl.col("core_tset") + pl.col("addr_tset")) / 200.0 + cos_sum,
     )
 
     # 3) context features relative to the other candidates of the same query
+    g = group_cols(channel_names)
     df = df.with_columns(
-        [pl.col(c).max().over("q").alias(f"{c}_maxq") for c in GROUP_COLS]
+        [pl.col(c).max().over("q").alias(f"{c}_maxq") for c in g]
         + [pl.len().over("q").cast(pl.Float32).alias("n_cand_q"),
            pl.col("combo").rank(method="ordinal", descending=True).over("q").cast(pl.Float32).alias("combo_rank_q")]
-    ).with_columns([(pl.col(c) - pl.col(f"{c}_maxq")).alias(f"{c}_dmax") for c in GROUP_COLS])
+    ).with_columns([(pl.col(c) - pl.col(f"{c}_maxq")).alias(f"{c}_dmax") for c in g])
 
-    keep = ["q", "p"] + FEATURES
-    return df.select(keep)
+    return df.select(["q", "p"] + feature_names(channel_names))

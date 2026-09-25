@@ -7,8 +7,7 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
-from common import MODELS, WORK, load_ground_truth, load_sources
-from features import FEATURES
+from common import MODELS, WORK, load_sources
 from metrics import decide, macro_f05
 from train import load_pool_normalised
 
@@ -21,7 +20,7 @@ def main():
     conf = json.load(open(f"{MODELS}/config_{args.tag}.json"))
     model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
     feats = pl.read_parquet(f"{WORK}/train_feats_{args.tag}.parquet").filter(pl.col("split") == "val")
-    prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
+    prob = model.predict(feats.select(conf["features"]).to_numpy(), num_threads=os.cpu_count())
     sc = feats.select("q", "p", "label").with_columns(prob=pl.Series(prob))
 
     s1, _ = load_sources("train")

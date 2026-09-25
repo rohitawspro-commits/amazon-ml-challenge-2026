@@ -12,10 +12,10 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
-from blocking import block_all
+from blocking import DEFAULT_CHANNELS, block_all
 from common import MODELS, WORK, load_ground_truth, load_sources, timer
-from features import FEATURES, build_features
-from metrics import macro_f05, search_threshold
+from features import build_features, feature_names
+from metrics import search_threshold
 from normalize import normalize_frame
 
 
@@ -24,20 +24,22 @@ def get_args():
     ap.add_argument("--n-train", type=int, default=200_000)
     ap.add_argument("--n-val", type=int, default=50_000)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--top-name", type=int, default=20)
-    ap.add_argument("--top-addr", type=int, default=20)
-    ap.add_argument("--name-thr", type=float, default=0.15)
-    ap.add_argument("--addr-thr", type=float, default=0.15)
-    ap.add_argument("--max-df", type=float, default=0.05)
+    ap.add_argument("--channels", default=None, help="JSON list of channel specs (default: blocking.DEFAULT_CHANNELS)")
     ap.add_argument("--rounds", type=int, default=2000)
     ap.add_argument("--tag", default="v1")
-    return ap.parse_args()
+    args = ap.parse_args()
+    args.channels = json.loads(args.channels) if args.channels else DEFAULT_CHANNELS
+    return args
 
 
 def load_pool_normalised(split: str) -> pl.DataFrame:
     path = f"{WORK}/{split}_pool_norm.parquet"
     if os.path.exists(path):
-        return pl.read_parquet(path)
+        pool = pl.read_parquet(path)
+        if "both" not in pool.columns:  # cache written by an older version
+            pool = pool.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())
+            pool.write_parquet(path)
+        return pool
     _, pool = load_sources(split)
     with timer(f"normalise {split} pool ({pool.height:,} rows)"):
         pool = normalize_frame(pool)
@@ -47,6 +49,8 @@ def load_pool_normalised(split: str) -> pl.DataFrame:
 
 def main():
     cfg = get_args()
+    names = [c["name"] for c in cfg.channels]
+    FEATURES = feature_names(names)
     t0 = time.time()
     s1, _ = load_sources("train")
     pool = load_pool_normalised("train")
@@ -59,7 +63,7 @@ def main():
         q = normalize_frame(q)
 
     with timer("blocking"):
-        cand = block_all(q, pool, cfg)
+        cand = block_all(q, pool, cfg.channels)
 
     # labels: (q gidx, p gidx) pairs from ground truth restricted to sampled queries
     qid = q.select(pl.col("entity_id").alias("source1_entity_id"), pl.int_range(pl.len()).cast(pl.Int32).alias("q"))
@@ -69,13 +73,13 @@ def main():
         .with_columns(pl.col("label").fill_null(0))
     n_truth = truth_pairs.height
     found = int(cand["label"].sum())
+    per_ch = " | ".join(f"{n}={int(cand.filter(pl.col(f'{n}_rank') < 99)['label'].sum()) / n_truth:.4f}" for n in names)
     print(f"[blocking] candidates={cand.height:,} ({cand.height / q.height:.1f}/query) | truth pairs={n_truth:,} "
-          f"| recall={found / n_truth:.4f} | name-channel recall="
-          f"{int(cand.filter(pl.col('name_rank') < 99)['label'].sum()) / n_truth:.4f} | addr-channel recall="
-          f"{int(cand.filter(pl.col('addr_rank') < 99)['label'].sum()) / n_truth:.4f}", flush=True)
+          f"| recall={found / n_truth:.4f} | per channel: {per_ch}", flush=True)
+    cand.write_parquet(f"{WORK}/train_cand_{cfg.tag}.parquet")
 
     with timer("features"):
-        feats = build_features(cand.drop("label"), q, pool).with_columns(cand["label"])
+        feats = build_features(cand.drop("label"), q, pool, names).with_columns(cand["label"])
     feats = feats.join(q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "split"), on="q")
     feats.write_parquet(f"{WORK}/train_feats_{cfg.tag}.parquet")
 
@@ -95,7 +99,7 @@ def main():
                           callbacks=[lgb.early_stopping(100), lgb.log_evaluation(200)])
     model.save_model(f"{MODELS}/lgb_{cfg.tag}.txt")
     imp = sorted(zip(FEATURES, model.feature_importance("gain")), key=lambda t: -t[1])
-    print("[importance] " + ", ".join(f"{k}={v:.0f}" for k, v in imp[:20]))
+    print("[importance] " + ", ".join(f"{k}={v:.0f}" for k, v in imp[:25]))
 
     # threshold search on validation (all val queries scored, including those with zero candidates)
     va_scored = va.select("q", "p").with_columns(prob=pl.Series(model.predict(X_va, num_threads=os.cpu_count())))
@@ -110,7 +114,7 @@ def main():
             print(f"      thr={thr_:.2f} f05={f_:.4f} P={p_:.4f} R={r_:.4f}")
     json.dump({"threshold": thr, "one_to_one": one, "val_f05": f05, "val_metrics": m,
                "sample": {"n_train": cfg.n_train, "n_val": cfg.n_val, "seed": cfg.seed},
-               "blocking": {k: getattr(cfg, k) for k in ("top_name", "top_addr", "name_thr", "addr_thr", "max_df")},
+               "blocking": {"channels": cfg.channels, "recall": found / n_truth, "cand_per_query": cand.height / q.height},
                "features": FEATURES, "best_iteration": model.best_iteration},
               open(f"{MODELS}/config_{cfg.tag}.json", "w"), indent=1)
     print(f"[done] total {time.time() - t0:.0f}s")

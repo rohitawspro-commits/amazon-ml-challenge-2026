@@ -3,14 +3,13 @@ import argparse
 import json
 import os
 import time
-from types import SimpleNamespace
 
 import lightgbm as lgb
 import polars as pl
 
 from blocking import block_all
 from common import MODELS, OUT, WORK, load_sources, timer
-from features import FEATURES, build_features
+from features import build_features
 from metrics import decide
 from normalize import normalize_frame
 from train import load_pool_normalised
@@ -26,13 +25,16 @@ def write_id_lists(path, header, s1_ids, lists):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1")
+    ap.add_argument("--cand-tag", default=None, help="reuse cached test candidates of another tag")
     ap.add_argument("--q-chunk", type=int, default=150_000, help="queries per feature/predict chunk")
     ap.add_argument("--threshold", type=float, default=None, help="override tuned threshold")
     args = ap.parse_args()
     t0 = time.time()
 
     conf = json.load(open(f"{MODELS}/config_{args.tag}.json"))
-    cfg = SimpleNamespace(**conf["blocking"])
+    channels = conf["blocking"]["channels"]
+    names = [c["name"] for c in channels]
+    FEATURES = conf["features"]
     thr = args.threshold if args.threshold is not None else conf["threshold"]
     model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
 
@@ -41,17 +43,19 @@ def main():
     q_path = f"{WORK}/test_s1_norm.parquet"
     if os.path.exists(q_path):
         q = pl.read_parquet(q_path)
+        if "both" not in q.columns:
+            q = q.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())
     else:
         with timer(f"normalise test S1 ({s1.height:,} rows)"):
             q = normalize_frame(s1)
         q.write_parquet(q_path)
 
-    cand_path = f"{WORK}/test_cand_{args.tag}.parquet"
+    cand_path = f"{WORK}/test_cand_{args.cand_tag or args.tag}.parquet"
     if os.path.exists(cand_path):
         cand = pl.read_parquet(cand_path)
     else:
         with timer("blocking (test)"):
-            cand = block_all(q, pool, cfg)
+            cand = block_all(q, pool, channels)
         cand.write_parquet(cand_path)
     print(f"[blocking] {cand.height:,} candidate pairs ({cand.height / q.height:.1f}/query)", flush=True)
 
@@ -60,7 +64,7 @@ def main():
     for start in range(0, n_q, args.q_chunk):
         part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
         with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
-            feats = build_features(part, q, pool)
+            feats = build_features(part, q, pool, names)
             prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
             scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
     scored = pl.concat(scored)
