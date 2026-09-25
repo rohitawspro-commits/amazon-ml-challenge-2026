@@ -141,21 +141,22 @@ def _norm_chunk(args):
 
 def normalize_frame(df: pl.DataFrame, procs: int = 4, chunk: int = 200_000) -> pl.DataFrame:
     """Add normalised columns to a source frame (entity_id, business_name, business_address, country)."""
-    names = df["business_name"].to_list()
-    addrs = df["business_address"].to_list()
-    ctry = df["country"].to_list()
-    jobs = [(names[i:i + chunk], addrs[i:i + chunk], ctry[i:i + chunk]) for i in range(0, len(names), chunk)]
     cols = ["nname", "core", "core_ns", "is_domain", "nonlatin", "naddr", "nums", "addr_empty"]
     schema = {"nname": pl.Utf8, "core": pl.Utf8, "core_ns": pl.Utf8, "is_domain": pl.Int8,
               "nonlatin": pl.Int8, "naddr": pl.Utf8, "nums": pl.List(pl.Utf8), "addr_empty": pl.Int8}
 
-    def to_frame(rows):  # convert one chunk at a time to keep Python-object memory bounded
+    def jobs():  # materialise one slice at a time so Python-object memory stays bounded
+        for i in range(0, df.height, chunk):
+            part = df.slice(i, chunk)
+            yield (part["business_name"].to_list(), part["business_address"].to_list(), part["country"].to_list())
+
+    def to_frame(rows):
         return pl.DataFrame({c: [r[i] for r in rows] for i, c in enumerate(cols)}, schema=schema)
 
-    if procs > 1 and len(jobs) > 1:
+    if procs > 1 and df.height > chunk:
         with Pool(procs) as pool:
-            frames = [to_frame(part) for part in pool.imap(_norm_chunk, jobs, chunksize=1)]
+            frames = [to_frame(part) for part in pool.imap(_norm_chunk, jobs(), chunksize=1)]
     else:
-        frames = [to_frame(_norm_chunk(j)) for j in jobs]
+        frames = [to_frame(_norm_chunk(j)) for j in jobs()]
     extra = pl.concat(frames) if frames else pl.DataFrame(schema=schema)
     return pl.concat([df, extra], how="horizontal")
