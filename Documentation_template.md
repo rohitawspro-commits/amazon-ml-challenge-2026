@@ -92,9 +92,9 @@ of the same Source-1 entity) that let the classifier make relative decisions.
 * **Candidate pairs generated:** TBD_CAND_PAIRS on the test set (TBD_CAND_PER_Q per Source-1 entity;
   reduction ratio ≈ 1 − TBD_CAND_PER_Q / 10M).
 * **How you ensured true matches were not lost:** blocking recall is measured on a 250k-entity
-  training sample against the *full* 10.3M-record training pool: TBD_RECALL overall
-  (word channel alone TBD_RECALL_W, name char channel TBD_RECALL_N3, address char channel
-  TBD_RECALL_A4). On a 20k-query Indian development sample (before the transliteration
+  training sample against the *full* 10.3M-record training pool: **0.977** pair recall overall
+  (word channel alone 0.972, name char channel 0.423, address char channel 0.813), with 53
+  candidates per Source-1 entity on average. On a 20k-query Indian development sample (before the transliteration
   dictionary) the word channel alone reached 0.919 pair recall at top-25 and the three-channel
   union 0.931; a single character-3-gram name channel, the textbook choice, reached only 0.52
   because common business names collide massively in a 4M-record pool.
@@ -121,7 +121,7 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   score.
 
 **Model type:** LightGBM binary classifier (gradient-boosted trees, MIT licence; 127 leaves,
-learning-rate 0.05, early-stopped on validation log-loss). Trained on TBD_TRAIN_PAIRS candidate
+learning-rate 0.05, early-stopped on validation log-loss). Trained on 10.6M candidate
 pairs from 200k randomly sampled Source-1 training entities blocked against the full 10.3M-record
 training pool (positives = pairs present in the ground truth).
 
@@ -129,14 +129,15 @@ training pool (positives = pairs present in the ground truth).
 held-out validation split of 50k Source-1 entities, maximising **macro F0.5 computed exactly as the
 leaderboard does** (singletons included). Two decision rules were compared: plain thresholding and
 threshold + one-to-one assignment (each Source-2/3 record is given only to the Source-1 entity with
-the highest probability). Selected: TBD_RULE at threshold TBD_THR.
+the highest probability). Selected: threshold **0.72** with one-to-one assignment (the sweep is flat between 0.66 and 0.76, 0.9656–0.9660).
 
 ---
 
 ## 5. Results & Error Analysis
 
-* **F_0.5 Score (macro):** TBD_F05 on the 50k-entity validation split (macro precision TBD_P,
-  macro recall TBD_R, singleton accuracy TBD_SING).
+* **F_0.5 Score (macro):** **0.9660** on the 50k-entity validation split (macro precision 0.985,
+  macro recall 0.925, singleton accuracy 0.961; pair-level precision 0.990, pair-level recall 0.925).
+  LightGBM validation log-loss 0.0101 after 2,000 rounds (learning-rate 0.05, 127 leaves).
 * **Common false positives (wrong merges):** TBD_FP
 * **Common false negatives (missed matches):** TBD_FN
 
