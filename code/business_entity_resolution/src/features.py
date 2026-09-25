@@ -115,19 +115,30 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
            pl.col("combo").rank(method="ordinal", descending=True).over("q").cast(pl.Float32).alias("combo_rank_q")]
     ).with_columns([(pl.col(c) - pl.col(f"{c}_maxq")).alias(f"{c}_dmax") for c in g])
 
-    return df.select(["q", "p"] + feature_names(channel_names))
+    return df.select(["q", "p"] + [pl.col(c).cast(pl.Float32) for c in feature_names(channel_names)])
 
 
 def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names,
-                           q_chunk: int = 40_000, log=None) -> pl.DataFrame:
-    """build_features over ranges of query indices, bounding peak memory (strings + list columns)."""
-    parts = []
+                           out_prefix: str, q_chunk: int = 40_000, log=None):
+    """build_features over ranges of query indices, writing one parquet file per chunk.
+
+    Keeps peak memory bounded (strings + list columns exist for one chunk only). A 'label' column
+    in `cand` is carried over. Returns the list of written file paths.
+    """
+    paths = []
     n_q = int(cand["q"].max()) + 1 if cand.height else 0
-    for start in range(0, n_q, q_chunk):
+    done = 0
+    for i, start in enumerate(range(0, n_q, q_chunk)):
         part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + q_chunk))
         if part.height == 0:
             continue
-        parts.append(build_features(part, q_df, p_df, channel_names))
+        feats = build_features(part.drop("label") if "label" in part.columns else part, q_df, p_df, channel_names)
+        if "label" in part.columns:
+            feats = feats.with_columns(part["label"])
+        path = f"{out_prefix}_{i:03d}.parquet"
+        feats.write_parquet(path)
+        paths.append(path)
+        done += part.height
         if log:
-            log(f"    features: queries {min(start + q_chunk, n_q):,}/{n_q:,} ({sum(p.height for p in parts):,} pairs)")
-    return pl.concat(parts)
+            log(f"    features: queries {min(start + q_chunk, n_q):,}/{n_q:,} ({done:,} pairs)")
+    return paths

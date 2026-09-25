@@ -19,7 +19,8 @@ def main():
     args = ap.parse_args()
     conf = json.load(open(f"{MODELS}/config_{args.tag}.json"))
     model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
-    feats = pl.read_parquet(f"{WORK}/train_feats_{args.tag}.parquet").filter(pl.col("split") == "val")
+    smp = conf.get("sample", {"n_train": 200_000, "n_val": 50_000, "seed": 42})
+    feats = pl.read_parquet(f"{WORK}/train_feats_{args.tag}_*.parquet").filter(pl.col("q") >= smp["n_train"])
     prob = model.predict(feats.select(conf["features"]).to_numpy(), num_threads=os.cpu_count())
     sc = feats.select("q", "p", "label").with_columns(prob=pl.Series(prob))
 
@@ -37,7 +38,6 @@ def main():
     fn = sc.filter((pl.col("label") == 1) & (pl.col("prob") < conf["threshold"])).sort("prob")
     print(f"\nfalse positives above threshold: {fp.height:,} | false negatives below: {fn.height:,}")
     # q indices refer to train.py's sampled frame: rebuild the identical sample (same seed / sizes)
-    smp = conf.get("sample", {"n_train": 200_000, "n_val": 50_000, "seed": 42})
     idx = np.random.default_rng(smp["seed"]).permutation(s1.height)[: smp["n_train"] + smp["n_val"]]
     qs = s1[idx]
     for title, df in (("FALSE POSITIVES (highest prob)", fp.head(args.n)), ("FALSE NEGATIVES (lowest prob)", fn.head(args.n))):

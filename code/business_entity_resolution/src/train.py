@@ -81,17 +81,19 @@ def main():
           f"| recall={found / n_truth:.4f} | per channel: {per_ch}", flush=True)
 
     with timer("features"):
-        feats = build_features_chunked(cand.drop("label"), q, pool, names, log=lambda m: print(m, flush=True))
-        feats = feats.join(cand.select("q", "p", "label"), on=["q", "p"])
+        paths = build_features_chunked(cand, q, pool, names, out_prefix=f"{WORK}/train_feats_{cfg.tag}",
+                                       log=lambda m: print(m, flush=True))
     del pool, cand
-    feats = feats.join(q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "split"), on="q")
-    feats.write_parquet(f"{WORK}/train_feats_{cfg.tag}.parquet")
-
-    tr = feats.filter(pl.col("split") == "train")
-    va = feats.filter(pl.col("split") == "val")
-    X_tr, y_tr = tr.select(FEATURES).cast(pl.Float32).to_numpy(), tr["label"].to_numpy()
-    X_va, y_va = va.select(FEATURES).cast(pl.Float32).to_numpy(), va["label"].to_numpy()
-    del feats, tr
+    split_df = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "split")
+    feats = pl.read_parquet(paths).join(split_df, on="q")
+    tr_mask = (feats["split"] == "train").to_numpy()
+    y_all = feats["label"].to_numpy()
+    X_all = feats.select(FEATURES).to_numpy()
+    va = feats.filter(~pl.Series(tr_mask)).select("q", "p")
+    del feats
+    X_tr, y_tr = X_all[tr_mask], y_all[tr_mask]
+    X_va, y_va = X_all[~tr_mask], y_all[~tr_mask]
+    del X_all
     print(f"[data] train pairs={len(y_tr):,} (pos={y_tr.mean():.3f}) | val pairs={len(y_va):,}", flush=True)
 
     params = dict(objective="binary", learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,
