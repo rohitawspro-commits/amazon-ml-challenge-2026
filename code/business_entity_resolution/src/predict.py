@@ -1,0 +1,85 @@
+"""Run the full pipeline on the test set and write output/matching_results.tsv + candidate_pairs.tsv."""
+import argparse
+import json
+import os
+import time
+from types import SimpleNamespace
+
+import lightgbm as lgb
+import polars as pl
+
+from blocking import block_all
+from common import MODELS, OUT, WORK, load_sources, timer
+from features import FEATURES, build_features
+from metrics import decide
+from normalize import normalize_frame
+from train import load_pool_normalised
+
+
+def write_id_lists(path, header, s1_ids, lists):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\t".join(header) + "\n")
+        for sid in s1_ids:
+            f.write(f"{sid}\t{','.join(lists.get(sid, ()))}\n")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tag", default="v1")
+    ap.add_argument("--q-chunk", type=int, default=150_000, help="queries per feature/predict chunk")
+    ap.add_argument("--threshold", type=float, default=None, help="override tuned threshold")
+    args = ap.parse_args()
+    t0 = time.time()
+
+    conf = json.load(open(f"{MODELS}/config_{args.tag}.json"))
+    cfg = SimpleNamespace(**conf["blocking"])
+    thr = args.threshold if args.threshold is not None else conf["threshold"]
+    model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
+
+    s1, _ = load_sources("test")
+    pool = load_pool_normalised("test")
+    q_path = f"{WORK}/test_s1_norm.parquet"
+    if os.path.exists(q_path):
+        q = pl.read_parquet(q_path)
+    else:
+        with timer(f"normalise test S1 ({s1.height:,} rows)"):
+            q = normalize_frame(s1)
+        q.write_parquet(q_path)
+
+    cand_path = f"{WORK}/test_cand_{args.tag}.parquet"
+    if os.path.exists(cand_path):
+        cand = pl.read_parquet(cand_path)
+    else:
+        with timer("blocking (test)"):
+            cand = block_all(q, pool, cfg)
+        cand.write_parquet(cand_path)
+    print(f"[blocking] {cand.height:,} candidate pairs ({cand.height / q.height:.1f}/query)", flush=True)
+
+    scored = []
+    n_q = q.height
+    for start in range(0, n_q, args.q_chunk):
+        part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
+        with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
+            feats = build_features(part, q, pool)
+            prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
+            scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
+    scored = pl.concat(scored)
+    scored.write_parquet(f"{WORK}/test_scored_{args.tag}.parquet")
+
+    pred = decide(scored, thr, conf["one_to_one"])
+    pool_ids = pool["entity_id"].to_numpy()
+    q_ids = q["entity_id"].to_list()
+    matches = {q_ids[r["q"]]: [pool_ids[p] for p in r["ids"]] for r in pred.iter_rows(named=True)}
+    cands = {q_ids[r["q"]]: [pool_ids[p] for p in r["p"]]
+             for r in cand.group_by("q").agg(pl.col("p")).iter_rows(named=True)}
+    with timer("writing outputs"):
+        write_id_lists(f"{OUT}/matching_results.tsv", ["source1_entity_id", "matched_entity_ids"], q_ids, matches)
+        write_id_lists(f"{OUT}/candidate_pairs.tsv", ["source1_entity_id", "candidate_entity_ids"], q_ids, cands)
+    n_match = sum(len(v) for v in matches.values())
+    print(f"[output] threshold={thr:.2f} one_to_one={conf['one_to_one']} | S1 entities={n_q:,} | "
+          f"with matches={len(matches):,} ({len(matches) / n_q:.3f}) | total matched ids={n_match:,} "
+          f"({n_match / n_q:.2f}/entity) | total {time.time() - t0:.0f}s")
+
+
+if __name__ == "__main__":
+    main()
