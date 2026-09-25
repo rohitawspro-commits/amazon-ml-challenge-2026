@@ -12,7 +12,7 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
-from blocking import DEFAULT_CHANNELS, block_all
+from blocking import BLOCK_COLS, DEFAULT_CHANNELS, block_all
 from common import MODELS, WORK, load_ground_truth, load_s1, load_sources, timer
 from features import build_features_chunked, feature_names, fit_tfidf
 from metrics import search_threshold
@@ -34,15 +34,19 @@ def get_args():
     return args
 
 
-def load_pool_normalised(split: str) -> pl.DataFrame:
+def load_pool_normalised(split: str, columns=None) -> pl.DataFrame:
+    """Normalised Source-2+3 pool (cached per normalisation version); `columns` limits what is loaded."""
     path = f"{WORK}/{split}_pool_norm_{NORM_VERSION}.parquet"
-    if os.path.exists(path):
-        return pl.read_parquet(path)
-    _, pool = load_sources(split)
-    with timer(f"normalise {split} pool ({pool.height:,} rows)"):
-        pool = normalize_frame(pool)
-    pool.write_parquet(path)
-    return pool
+    if not os.path.exists(path):
+        _, pool = load_sources(split)
+        with timer(f"normalise {split} pool ({pool.height:,} rows)"):
+            pool = normalize_frame(pool)
+        pool.write_parquet(path)
+        del pool
+    return pl.read_parquet(path, columns=columns)
+
+
+BLOCK_LOAD_COLS = ["entity_id", "country"] + BLOCK_COLS
 
 
 def main():
@@ -51,7 +55,7 @@ def main():
     FEATURES = feature_names(names)
     t0 = time.time()
     s1 = load_s1("train")
-    pool = load_pool_normalised("train")
+    pool = load_pool_normalised("train", BLOCK_LOAD_COLS)  # light version for blocking
     gt = load_ground_truth()
 
     rng = np.random.default_rng(cfg.seed)
@@ -72,10 +76,12 @@ def main():
         print(f"[blocking] reusing {cand.height:,} cached candidates from {cand_path}", flush=True)
     else:
         with timer("blocking"):
-            cand = block_all(q, pool, cfg.channels)
+            cand = block_all(q, pool, cfg.channels, out_prefix=f"{WORK}/train_block_{cfg.tag}")
         cand = cand.join(truth_pairs.with_columns(label=pl.lit(1, dtype=pl.Int8)), on=["q", "p"], how="left") \
             .with_columns(pl.col("label").fill_null(0))
         cand.write_parquet(cand_path)
+    del pool
+    pool = load_pool_normalised("train")  # full version for features
     found = int(cand["label"].sum())
     per_ch = " | ".join(f"{n}={int(cand.filter(pl.col(f'{n}_rank') < 99)['label'].sum()) / n_truth:.4f}" for n in names)
     print(f"[blocking] candidates={cand.height:,} ({cand.height / q.height:.1f}/query) | truth pairs={n_truth:,} "

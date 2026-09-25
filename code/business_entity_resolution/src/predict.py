@@ -9,6 +9,7 @@ import polars as pl
 
 from blocking import block_all
 from common import MODELS, OUT, WORK, load_s1, timer
+from train import BLOCK_LOAD_COLS
 from features import build_features, fit_tfidf
 from metrics import decide
 from normalize import NORM_VERSION, normalize_frame
@@ -32,7 +33,7 @@ def main():
     thr = args.threshold if args.threshold is not None else conf["threshold"]
     model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
 
-    pool = load_pool_normalised("test")
+    pool = load_pool_normalised("test", BLOCK_LOAD_COLS)  # light version for blocking
     q_path = f"{WORK}/test_s1_norm_{NORM_VERSION}.parquet"
     if os.path.exists(q_path):
         q = pl.read_parquet(q_path)
@@ -51,14 +52,16 @@ def main():
             q_country = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "country")
             keep = q_country.filter(~pl.col("country").is_in(args.reblock)).select("q")
             with timer(f"re-blocking {args.reblock}"):
-                new = block_all(q, pool, channels, countries=args.reblock)
+                new = block_all(q, pool, channels, countries=args.reblock, out_prefix=f"{WORK}/test_block_{args.tag}")
             cand = pl.concat([cand.join(keep, on="q"), new.select(cand.columns)]).sort(["q", "p"])
             cand.write_parquet(cand_path)
     else:
         with timer("blocking (test)"):
-            cand = block_all(q, pool, channels)
+            cand = block_all(q, pool, channels, out_prefix=f"{WORK}/test_block_{args.tag}")
         cand.write_parquet(cand_path)
     print(f"[blocking] {cand.height:,} candidate pairs ({cand.height / q.height:.1f}/query)", flush=True)
+    del pool
+    pool = load_pool_normalised("test")  # full version for features
 
     with timer("tf-idf spaces"):
         tfidf = fit_tfidf(q, pool)
