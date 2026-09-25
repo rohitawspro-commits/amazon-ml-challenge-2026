@@ -60,26 +60,44 @@ of the same Source-1 entity) that let the classifier make relative decisions.
 
 ## 3. Candidate Generation (Blocking)
 
+* **Normalisation first.** Names: lower-cased, native-script words mapped through a
+  *learned* dictionary (see below) and the rest transliterated with `unidecode`, `&`->`and`,
+  dotted abbreviations collapsed (`L.L.C.` -> `llc`), domain names reduced to their label,
+  legal-form and filler tokens removed to obtain a *core* name, stutter duplicates removed,
+  `0`->`o` / `5`->`s` inside words. Addresses: transliterated, native-script state names mapped to
+  English, per-country state abbreviations expanded (`NC` -> `north carolina`,
+  `KA` -> `karnataka`; unseen countries such as France simply skip this table), street
+  abbreviations expanded (`st` -> `street`, `rd` -> `road`, …), numeric tokens extracted.
+* **Learned transliteration dictionary.** 15 % of Source-2 and 11 % of Source-3 names are the
+  English name written in Devanagari / Kannada / Tamil / Bengali / Gujarati / Telugu … . From the
+  551k ground-truth pairs whose pool name is in a native script we align tokens positionally with
+  the Source-1 name and keep the dominant Latin word for each native word. The vocabulary is small
+  (1,347 native tokens) and the dictionary covers 92 % of native tokens in *unmatched* names
+  (`श्याम कंसल्टिंग प्रा. लि.` -> `shyam consulting pvt ltd`). Only the provided training data is
+  used.
 * **Blocking keys used:**
   1. `country` (exact; treated as an open set of strings).
-  2. Name channel: TF-IDF over character 3-grams (`char_wb`, sublinear tf, `min_df=2`,
-     `max_df=0.05`) of the *core* name — lower-cased, transliterated with `unidecode`, `&`->`and`,
-     dotted abbreviations collapsed (`L.L.C.` -> `llc`), domain names reduced to their label,
-     legal-form and filler tokens removed, stutter duplicates removed, `0`->`o` / `5`->`s` inside
-     words. Top-20 cosine neighbours per query (`sparse_dot_topn`).
-  3. Address channel: TF-IDF over character 3-grams of the normalised address — transliterated,
-     native-script state names mapped to English, per-country state abbreviations expanded
-     (`NC` -> `north carolina`, `KA` -> `karnataka`; unseen countries skip this), street
-     abbreviations expanded (`st` -> `street`, `rd` -> `road`, …). Top-20 cosine neighbours per
-     query.
-  The two channels are unioned; each channel's cosine score and rank are kept as features.
+  2. **Word channel** (main): TF-IDF over word tokens of `core name + normalised address`
+     (`min_df=2`, `max_df=0.02`, sublinear tf); top-40 cosine neighbours per query
+     (`sparse_dot_topn`). Name and address evidence are combined in one vector space, so a
+     record whose name is garbled is still retrieved by its address and vice-versa, and common
+     names are disambiguated by address words.
+  3. **Name char channel**: TF-IDF over character 3-grams of the core name (`max_df=0.01`),
+     top-10 — robust to typos inside words.
+  4. **Address char channel**: TF-IDF over character 4-grams of the normalised address
+     (`max_df=0.01`), top-15.
+  The channels are unioned; each channel's cosine score and rank are kept as features. Pruning
+  frequent terms with `max_df` is what makes the sparse products tractable (the word channel
+  processes 20k queries against 4.1M Indian records in ~36 s on 4 cores).
 * **Candidate pairs generated:** TBD_CAND_PAIRS on the test set (TBD_CAND_PER_Q per Source-1 entity;
   reduction ratio ≈ 1 − TBD_CAND_PER_Q / 10M).
 * **How you ensured true matches were not lost:** blocking recall is measured on a 250k-entity
-  training sample against the *full* training pool: TBD_RECALL overall (name channel alone
-  TBD_RECALL_NAME, address channel alone TBD_RECALL_ADDR). The union of two channels is what keeps
-  recall high: names in native script or written as a domain are recovered by the address channel,
-  and records with an empty / shortened address are recovered by the name channel.
+  training sample against the *full* 10.3M-record training pool: TBD_RECALL overall
+  (word channel alone TBD_RECALL_W, name char channel TBD_RECALL_N3, address char channel
+  TBD_RECALL_A4). On a 20k-query Indian development sample (before the transliteration
+  dictionary) the word channel alone reached 0.919 pair recall at top-25 and the three-channel
+  union 0.931; a single character-3-gram name channel, the textbook choice, reached only 0.52
+  because common business names collide massively in a 4M-record pool.
 
 ---
 
@@ -89,17 +107,18 @@ of the same Source-1 entity) that let the classifier make relative decisions.
 
 * Name features: `rapidfuzz` ratio, token-sort ratio, token-set ratio and partial ratio on the
   full normalised name; ratio, token-set ratio and Jaro–Winkler on the core name; ratio and partial
-  ratio on the space-less core name (robust to domain-style concatenation); TF-IDF cosine and rank
-  from the name channel; core-token Jaccard / intersection / coverage in both directions; first-token
-  equality; lengths and token counts of both sides.
+  ratio on the space-less core name (robust to domain-style concatenation); core-token Jaccard /
+  intersection / coverage in both directions; first-token equality; lengths and token counts of
+  both sides.
 * Address features: ratio, token-sort, token-set and partial ratio on the normalised address;
-  TF-IDF cosine and rank from the address channel; address-token Jaccard; numeric-token Jaccard and
-  intersection (house numbers, PIN codes); first-number (house number) equality; number counts;
-  empty-address flag.
-* Other: whether the candidate was retrieved by both channels; candidate name is a domain;
-  candidate name was non-Latin; **per-query context**: for eight key scores the maximum over all
-  candidates of the same Source-1 entity and the gap between this candidate and that maximum,
-  the number of candidates, and the candidate's rank by a combined score.
+  address-token Jaccard; numeric-token Jaccard and intersection (house numbers, PIN codes);
+  first-number (house number) equality; number counts; empty-address flag.
+* Blocking features: cosine score and rank in each of the three channels, number of channels that
+  retrieved the candidate.
+* Other: candidate name is a domain; candidate name was non-Latin; **per-query context**: for nine
+  key scores the maximum over all candidates of the same Source-1 entity and the gap between this
+  candidate and that maximum, the number of candidates, and the candidate's rank by a combined
+  score.
 
 **Model type:** LightGBM binary classifier (gradient-boosted trees, MIT licence; 127 leaves,
 learning-rate 0.05, early-stopped on validation log-loss). Trained on TBD_TRAIN_PAIRS candidate

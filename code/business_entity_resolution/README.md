@@ -14,9 +14,12 @@ data (TSV)  ->  normalise  ->  blocking (per country, name + address TF-IDF chan
 
 ```
 src/common.py      paths, TSV loading, timers
-src/normalize.py   name/address normalisation (transliteration, legal-suffix stripping, abbreviations)
-src/blocking.py    candidate generation: top-N char-3-gram TF-IDF neighbours (name channel + address channel)
-src/features.py    ~60 pairwise features (string similarity, token/number overlap, per-query context)
+src/normalize.py   name/address normalisation (learned transliteration, legal-suffix stripping, abbreviations)
+src/build_translit.py  learns resources/translit_map.json (native-script word -> Latin word) from train pairs
+src/resources/     translit_map.json (shipped; regenerate with build_translit.py)
+src/blocking.py    candidate generation: per-country top-N TF-IDF neighbours in three channels
+                   (word tokens of name+address, char 3-grams of name, char 4-grams of address)
+src/features.py    ~65 pairwise features (string similarity, token/number overlap, blocking scores, per-query context)
 src/metrics.py     macro F0.5, decision rule (threshold + one-to-one), threshold search
 src/train.py       train LightGBM on a sample of Source-1 training entities, tune threshold on validation
 src/predict.py     run the pipeline on the test set and write both output files
@@ -45,7 +48,10 @@ Data is expected under `<repo root>/data/raw/student_resource/dataset/{train,tes
 ```bash
 cd src
 
-# 1) train on 200k sampled Source-1 entities, validate on 50k (≈ 30–60 min on 4 cores, ~12 GB RAM)
+# 0) (optional — the file is shipped) relearn the transliteration dictionary from the training pairs
+python3 build_translit.py
+
+# 1) train on 200k sampled Source-1 entities, validate on 50k (≈ 45–60 min on 4 cores, ~12 GB RAM)
 python3 train.py --tag v1 --n-train 200000 --n-val 50000
 
 # 2) block + score + decide on the full test set, write output/*.tsv (≈ 1–2 h on 4 cores)
