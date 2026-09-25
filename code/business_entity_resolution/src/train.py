@@ -80,6 +80,7 @@ def main():
     print(f"[blocking] candidates={cand.height:,} ({cand.height / q.height:.1f}/query) | truth pairs={n_truth:,} "
           f"| recall={found / n_truth:.4f} | per channel: {per_ch}", flush=True)
 
+    n_cand = cand.height
     with timer("features"):
         paths = build_features_chunked(cand, q, pool, names, out_prefix=f"{WORK}/train_feats_{cfg.tag}",
                                        log=lambda m: print(m, flush=True))
@@ -121,7 +122,7 @@ def main():
             print(f"      thr={thr_:.2f} f05={f_:.4f} P={p_:.4f} R={r_:.4f}")
     json.dump({"threshold": thr, "one_to_one": one, "val_f05": f05, "val_metrics": m,
                "sample": {"n_train": cfg.n_train, "n_val": cfg.n_val, "seed": cfg.seed},
-               "blocking": {"channels": cfg.channels, "recall": found / n_truth, "cand_per_query": cand.height / q.height},
+               "blocking": {"channels": cfg.channels, "recall": found / n_truth, "cand_per_query": n_cand / q.height},
                "features": FEATURES, "best_iteration": model.best_iteration},
               open(f"{MODELS}/config_{cfg.tag}.json", "w"), indent=1)
     print(f"[done] total {time.time() - t0:.0f}s")
