@@ -68,6 +68,16 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   English, per-country state abbreviations expanded (`NC` -> `north carolina`,
   `KA` -> `karnataka`; unseen countries such as France simply skip this table), street
   abbreviations expanded (`st` -> `street`, `rd` -> `road`, …), numeric tokens extracted.
+* **Learned noise words.** Sources 2/3 decorate names with extra words that Source 1 does not
+  carry (`Holdings`, `Uptown`, `Overseas`, `Participations`, `Groupe`, honorifics `Mr`/`Smt` …).
+  For every country we compare, without any labels, the document frequency of each name token
+  in Sources 2/3 with its frequency in Source 1; tokens at least 3× more frequent in Sources 2/3
+  are removed from the core name. Because no labels are needed, the same statistic is computed
+  for France from the test files (18 US, 7 Indian and 8 French words in total).
+* **French address forms.** Source 1 writes `17 Rue du Commandant`, Sources 2/3 write
+  `NO 17 R DU COMMANDANT` / `N° 17 R. …`: number markers (`No`, `N°`) are dropped, `R`/`Q`/`Imp`/`All`/`Ch`/`Crs`
+  are expanded, and departments are mapped to their region (`Nord` -> `Hauts-de-France`,
+  `Gironde` -> `Nouvelle-Aquitaine`) because the two sources use different levels.
 * **Learned transliteration dictionary.** 15 % of Source-2 and 11 % of Source-3 names are the
   English name written in Devanagari / Kannada / Tamil / Bengali / Gujarati / Telugu … . From the
   551k ground-truth pairs whose pool name is in a native script we align tokens positionally with
@@ -93,7 +103,7 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   reduction ratio ≈ 1 − TBD_CAND_PER_Q / 10M).
 * **How you ensured true matches were not lost:** blocking recall is measured on a 250k-entity
   training sample against the *full* 10.3M-record training pool: **0.977** pair recall overall
-  (word channel alone 0.972, name char channel 0.423, address char channel 0.813), with 53
+  (word channel alone 0.972, name char channel 0.424, address char channel 0.813), with 53
   candidates per Source-1 entity on average. On a 20k-query Indian development sample (before the transliteration
   dictionary) the word channel alone reached 0.919 pair recall at top-25 and the three-channel
   union 0.931; a single character-3-gram name channel, the textbook choice, reached only 0.52
@@ -114,14 +124,15 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   address-token Jaccard; numeric-token Jaccard and intersection (house numbers, PIN codes);
   first-number (house number) equality; number counts; empty-address flag.
 * Blocking features: cosine score and rank in each of the three channels, number of channels that
-  retrieved the candidate.
+  retrieved the candidate; IDF-weighted word cosines of the core names and of the addresses
+  (word TF-IDF spaces fitted on the pool), which down-weight ubiquitous words such as city names.
 * Other: candidate name is a domain; candidate name was non-Latin; **per-query context**: for nine
   key scores the maximum over all candidates of the same Source-1 entity and the gap between this
   candidate and that maximum, the number of candidates, and the candidate's rank by a combined
   score.
 
 **Model type:** LightGBM binary classifier (gradient-boosted trees, MIT licence; 127 leaves,
-learning-rate 0.05, early-stopped on validation log-loss). Trained on 10.6M candidate
+learning-rate 0.05, up to 3,000 rounds, early-stopped on validation log-loss; ~37 MB model file). Trained on 10.6M candidate
 pairs from 200k randomly sampled Source-1 training entities blocked against the full 10.3M-record
 training pool (positives = pairs present in the ground truth).
 
@@ -129,15 +140,18 @@ training pool (positives = pairs present in the ground truth).
 held-out validation split of 50k Source-1 entities, maximising **macro F0.5 computed exactly as the
 leaderboard does** (singletons included). Two decision rules were compared: plain thresholding and
 threshold + one-to-one assignment (each Source-2/3 record is given only to the Source-1 entity with
-the highest probability). Selected: threshold **0.72** with one-to-one assignment (the sweep is flat between 0.66 and 0.76, 0.9656–0.9660).
+the highest probability). Selected: threshold **0.70** with one-to-one assignment (the sweep is flat between 0.62 and 0.78).
 
 ---
 
 ## 5. Results & Error Analysis
 
-* **F_0.5 Score (macro):** **0.9660** on the 50k-entity validation split (macro precision 0.985,
-  macro recall 0.925, singleton accuracy 0.961; pair-level precision 0.990, pair-level recall 0.925).
-  LightGBM validation log-loss 0.0101 after 2,000 rounds (learning-rate 0.05, 127 leaves).
+* **F_0.5 Score (macro):** **0.9654** on the 50k-entity validation split (macro precision 0.984,
+  macro recall 0.927, singleton accuracy 0.954; pair-level precision 0.989, pair-level recall 0.927).
+  LightGBM validation log-loss 0.0101 (learning-rate 0.05, 127 leaves, early stopping on the
+  validation split). An earlier variant without the learned noise words and IDF-weighted cosines
+  scored 0.9660 — i.e. the two are within noise of each other; the final model keeps the extra
+  features because they make the pipeline more robust on the unseen French records.
 * **Common false positives (wrong merges):** TBD_FP
 * **Common false negatives (missed matches):** TBD_FN
 
