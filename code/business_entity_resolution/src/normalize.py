@@ -1,0 +1,236 @@
+"""Country-agnostic normalisation of business names and addresses.
+
+Everything here is deterministic string processing driven only by the record itself
+(no external lookups). Per-country tables (state / region names, address abbreviations,
+learned name-noise words) are applied through lookups with an empty fallback, so an unseen
+country simply skips those steps.
+"""
+import json
+import os
+import re
+from multiprocessing import Pool
+
+import polars as pl
+from unidecode import unidecode
+
+NORM_VERSION = "v3"  # bump when normalisation changes so cached normalised frames are rebuilt
+
+_RES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+
+
+def _load_json(name, default):
+    path = os.path.join(_RES_DIR, name)
+    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else default
+
+
+# Native-script word -> Latin word dictionary learned from the training ground truth
+# (see build_translit.py). Falls back to unidecode for unknown words.
+TRANSLIT = _load_json("translit_map.json", {})
+# Per-country name tokens that Sources 2/3 add far more often than Source 1 contains them
+# (e.g. "Holdings", "Participations", honorifics) - learned from unlabelled token statistics
+# (see build_noise_words.py).
+NOISE = {k: set(v) for k, v in _load_json("noise_words.json", {}).items()}
+_EMPTY = frozenset()
+_NATIVE_RE = re.compile(r"[ऀ-෿]")
+
+
+def transliterate(s: str) -> str:
+    """Map native-script words through the learned dictionary, then unidecode the rest."""
+    if _NATIVE_RE.search(s):
+        s = " ".join(TRANSLIT.get(t.strip(".,()-:'\""), t) if _NATIVE_RE.search(t) else t for t in s.split())
+    return unidecode(s)
+
+
+# Legal-form and filler tokens removed to obtain the "core" name.
+LEGAL = set(
+    "llc inc incorporated corp corporation co company ltd limited pvt private plc llp lp pc pllc "
+    "pty sarl sas sa eurl sasu snc sci scp gmbh ag bv nv ltee lc pra li opc "
+    "cie compagnie ets etablissements fils freres frs sarlu selarl gie earl gaec scea sccv scm sca".split()
+)
+FILLER = set(
+    "the and of services service center centre group dba formerly aka doing sri smt shri ms messrs "
+    "et de du des la le les l d au aux en com".split()
+)
+
+US_STATES = {
+    "al": "alabama", "ak": "alaska", "az": "arizona", "ar": "arkansas", "ca": "california",
+    "co": "colorado", "ct": "connecticut", "de": "delaware", "fl": "florida", "ga": "georgia",
+    "hi": "hawaii", "id": "idaho", "il": "illinois", "in": "indiana", "ia": "iowa", "ks": "kansas",
+    "ky": "kentucky", "la": "louisiana", "me": "maine", "md": "maryland", "ma": "massachusetts",
+    "mi": "michigan", "mn": "minnesota", "ms": "mississippi", "mo": "missouri", "mt": "montana",
+    "ne": "nebraska", "nv": "nevada", "nh": "new hampshire", "nj": "new jersey", "nm": "new mexico",
+    "ny": "new york", "nc": "north carolina", "nd": "north dakota", "oh": "ohio", "ok": "oklahoma",
+    "or": "oregon", "pa": "pennsylvania", "ri": "rhode island", "sc": "south carolina",
+    "sd": "south dakota", "tn": "tennessee", "tx": "texas", "ut": "utah", "vt": "vermont",
+    "va": "virginia", "wa": "washington", "wv": "west virginia", "wi": "wisconsin", "wy": "wyoming",
+    "dc": "district of columbia", "pr": "puerto rico",
+}
+IN_STATES = {
+    "mh": "maharashtra", "ka": "karnataka", "tn": "tamil nadu", "wb": "west bengal", "dl": "delhi",
+    "up": "uttar pradesh", "gj": "gujarat", "rj": "rajasthan", "mp": "madhya pradesh",
+    "ap": "andhra pradesh", "ts": "telangana", "tg": "telangana", "kl": "kerala", "pb": "punjab",
+    "hr": "haryana", "br": "bihar", "or": "odisha", "od": "odisha", "jh": "jharkhand",
+    "cg": "chhattisgarh", "ct": "chhattisgarh", "uk": "uttarakhand", "ua": "uttarakhand",
+    "hp": "himachal pradesh", "jk": "jammu and kashmir", "as": "assam", "ga": "goa",
+    "ch": "chandigarh", "py": "puducherry", "mn": "manipur", "ml": "meghalaya", "mz": "mizoram",
+    "nl": "nagaland", "sk": "sikkim", "tr": "tripura", "ar": "arunachal pradesh",
+    "an": "andaman and nicobar islands", "ld": "lakshadweep", "orissa": "odisha",
+    "new delhi": "delhi", "bengaluru": "bangalore", "mumbai suburban": "mumbai",
+}
+# French departments -> region (records use either level for the same place).
+FR_REGIONS = {
+    "nord": "hauts de france", "pas de calais": "hauts de france",
+    "gironde": "nouvelle aquitaine", "loire atlantique": "pays de la loire",
+}
+STATE_MAPS = {"US": US_STATES, "India": IN_STATES, "France": FR_REGIONS}
+
+# Native-script state names seen in Indian addresses -> English (applied before transliteration).
+INDIC_STATES = {
+    "महाराष्ट्र": "maharashtra", "कर्नाटक": "karnataka", "ಕರ್ನಾಟಕ": "karnataka", "தமிழ்நாடு": "tamil nadu",
+    "தமிழ் நாடு": "tamil nadu", "পশ্চিমবঙ্গ": "west bengal", "दिल्ली": "delhi", "उत्तर प्रदेश": "uttar pradesh",
+    "गुजरात": "gujarat", "ગુજરાત": "gujarat", "राजस्थान": "rajasthan", "मध्य प्रदेश": "madhya pradesh",
+    "తెలంగాణ": "telangana", "ఆంధ్ర ప్రదేశ్": "andhra pradesh", "ఆంధ్రప్రదేశ్": "andhra pradesh",
+    "കേരളം": "kerala", "ਪੰਜਾਬ": "punjab", "हरियाणा": "haryana", "बिहार": "bihar", "ଓଡ଼ିଶା": "odisha",
+    "ଓଡିଶା": "odisha", "झारखंड": "jharkhand", "छत्तीसगढ़": "chhattisgarh", "उत्तराखंड": "uttarakhand",
+    "हिमाचल प्रदेश": "himachal pradesh", "असम": "assam", "অসম": "assam", "गोवा": "goa", "पंजाब": "punjab",
+    "चंडीगढ़": "chandigarh", "जम्मू और कश्मीर": "jammu and kashmir", "मुंबई": "mumbai", "पुणे": "pune",
+    "बेंगलुरु": "bangalore", "ಬೆಂಗಳೂರು": "bangalore", "चेन्नई": "chennai", "சென்னை": "chennai",
+    "कोलकाता": "kolkata", "কলকাতা": "kolkata", "हैदराबाद": "hyderabad", "హైదరాబాద్": "hyderabad",
+    "अहमदाबाद": "ahmedabad", "અમદાવાદ": "ahmedabad", "नई दिल्ली": "new delhi", "नागपुर": "nagpur",
+}
+
+ADDR_ABBR = {
+    "st": "street", "rd": "road", "ave": "avenue", "av": "avenue", "dr": "drive", "ln": "lane",
+    "ct": "court", "cir": "circle", "blvd": "boulevard", "bd": "boulevard", "hwy": "highway",
+    "pkwy": "parkway", "pl": "place", "ter": "terrace", "terr": "terrace", "trl": "trail",
+    "twp": "township", "apt": "apartment", "ste": "suite", "fl": "floor", "flr": "floor",
+    "bldg": "building", "mt": "mount", "ft": "fort", "n": "north", "s": "south", "e": "east",
+    "w": "west", "ne": "northeast", "nw": "northwest", "se": "southeast", "sw": "southwest",
+    "nr": "near", "opp": "opposite", "indl": "industrial", "ind": "industrial", "sec": "sector",
+    "blk": "block", "res": "residency", "soc": "society", "rly": "railway", "stn": "station",
+    "dist": "district", "tal": "taluka", "vill": "village", "po": "post", "hno": "house",
+    "rte": "route", "cres": "crescent", "sq": "square", "chs": "chs", "ext": "extension",
+    "ph": "phase", "nagar": "nagar", "clny": "colony", "mkt": "market", "gr": "ground",
+    # "number" markers carry no information ("No. 131", "N° 17", "Nº 1")
+    "no": "", "ndeg": "", "nos": "",
+}
+# Country-specific overrides, found by comparing token frequencies of Source 1 (full forms)
+# with Sources 2/3 (abbreviated forms) on unlabelled French records.
+ADDR_OVERRIDES = {
+    "France": {"r": "rue", "q": "quai", "imp": "impasse", "all": "allee", "ch": "chemin", "crs": "cours",
+               "psg": "passage", "st": "saint", "res": "residence", "n": ""},
+}
+
+_DOMAIN_RE = re.compile(r"(?:https?://)?(?:www\.)?([a-z0-9-]{2,})\.(?:co\.in|co\.uk|com|in|org|net|co|biz|info|us|fr|io)\b")
+_DOT_ABBR_RE = re.compile(r"\b([a-z])\.(?=[a-z]\b)")
+_NONALNUM_RE = re.compile(r"[^a-z0-9]+")
+_ZERO_RE = re.compile(r"(?<=[a-z])0|0(?=[a-z])")
+_FIVE_RE = re.compile(r"(?<=[a-z])5(?=[a-z])|(?<![a-z0-9])5(?=[a-z]{2})")
+_NUM_RE = re.compile(r"\d+")
+_COMP_SPLIT_RE = re.compile(r"[,;|]")
+
+
+def _join_letters(toks):
+    """Join runs of single letters: 's a s' -> 'sas', 'j m' -> 'jm'."""
+    out, run = [], []
+    for t in toks:
+        if len(t) == 1 and t.isalpha():
+            run.append(t)
+            continue
+        if run:
+            out.append("".join(run))
+            run = []
+        out.append(t)
+    if run:
+        out.append("".join(run))
+    return out
+
+
+def name_tokens(raw: str):
+    """Return (tokens, is_domain, nonlatin) of a cleaned, transliterated business name."""
+    nonlatin = 0 if raw.isascii() else 1
+    s = raw if not nonlatin else transliterate(raw)
+    s = s.lower().replace("&", " and ")
+    is_domain = 0
+    if "." in s:
+        s2 = _DOMAIN_RE.sub(lambda m: " " + m.group(1).replace("-", "") + " ", s)
+        if s2 != s:
+            is_domain, s = 1, s2
+        for _ in range(3):  # l.l.c. -> llc, d.b.a. -> dba
+            s = _DOT_ABBR_RE.sub(r"\1", s)
+    s = _NONALNUM_RE.sub(" ", s).strip()
+    s = _FIVE_RE.sub("s", _ZERO_RE.sub("o", s))
+    return _join_letters(s.split()), is_domain, nonlatin
+
+
+def norm_name(raw: str, country: str = ""):
+    """Return (full_norm, core, core_nospace, is_domain, nonlatin)."""
+    toks, is_domain, nonlatin = name_tokens(raw)
+    noise = NOISE.get(country, _EMPTY)
+    ctok = country.lower()
+    core = [t for t in toks if t not in LEGAL and t not in FILLER and t not in noise and t != ctok]
+    core = [t for i, t in enumerate(core) if i == 0 or t != core[i - 1]]  # drop stutter duplicates
+    if not core:
+        core = [t for t in toks if t not in LEGAL] or toks
+    full = " ".join(toks)
+    core_s = " ".join(core)
+    return full, core_s, core_s.replace(" ", ""), is_domain, nonlatin
+
+
+def norm_addr(raw: str, country: str):
+    """Return (normalised address string, list of numeric tokens)."""
+    nums = _NUM_RE.findall(raw)
+    s = raw
+    if not s.isascii():
+        for k, v in INDIC_STATES.items():
+            if k in s:
+                s = s.replace(k, " " + v + " ")
+        s = transliterate(s)
+    s = s.lower()
+    smap = STATE_MAPS.get(country, {})
+    over = ADDR_OVERRIDES.get(country, {})
+    out = []
+    for comp in _COMP_SPLIT_RE.split(s):
+        c = _NONALNUM_RE.sub(" ", comp).strip()
+        if not c:
+            continue
+        if c in smap:
+            out.append(smap[c])
+            continue
+        words = (over[t] if t in over else ADDR_ABBR.get(t, t) for t in c.split())
+        out.append(" ".join(w for w in words if w))
+    return " ".join(w for w in out if w), nums
+
+
+def _norm_chunk(args):
+    names, addrs, countries = args
+    rows = []
+    for n, a, c in zip(names, addrs, countries):
+        full, core, core_ns, is_dom, nonlat = norm_name(n, c)
+        naddr, nums = norm_addr(a, c)
+        rows.append((full, core, core_ns, is_dom, nonlat, naddr, nums, int(a.strip() == "")))
+    return rows
+
+
+def normalize_frame(df: pl.DataFrame, procs: int = 4, chunk: int = 200_000) -> pl.DataFrame:
+    """Add normalised columns to a source frame (entity_id, business_name, business_address, country)."""
+    cols = ["nname", "core", "core_ns", "is_domain", "nonlatin", "naddr", "nums", "addr_empty"]
+    schema = {"nname": pl.Utf8, "core": pl.Utf8, "core_ns": pl.Utf8, "is_domain": pl.Int8,
+              "nonlatin": pl.Int8, "naddr": pl.Utf8, "nums": pl.List(pl.Utf8), "addr_empty": pl.Int8}
+
+    def jobs():  # materialise one slice at a time so Python-object memory stays bounded
+        for i in range(0, df.height, chunk):
+            part = df.slice(i, chunk)
+            yield (part["business_name"].to_list(), part["business_address"].to_list(), part["country"].to_list())
+
+    def to_frame(rows):
+        return pl.DataFrame({c: [r[i] for r in rows] for i, c in enumerate(cols)}, schema=schema)
+
+    if procs > 1 and df.height > chunk:
+        with Pool(procs) as pool:
+            frames = [to_frame(part) for part in pool.imap(_norm_chunk, jobs(), chunksize=1)]
+    else:
+        frames = [to_frame(_norm_chunk(j)) for j in jobs()]
+    extra = pl.concat(frames) if frames else pl.DataFrame(schema=schema)
+    out = pl.concat([df, extra], how="horizontal")
+    return out.with_columns(both=(pl.col("core") + " " + pl.col("naddr")).str.strip_chars())
