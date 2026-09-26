@@ -17,6 +17,9 @@ Team SJCM: Rohit, Shreyash Patil, Aryan, Arvind Prajapati. Talk to the user in H
 - Rules: no external data, APIs or lookups (disqualification). Model licence MIT/Apache 2.0, at most 8B parameters.
 - Final zip `SJCM_submission.zip`: `output/` (both TSVs), `code/business_entity_resolution/` (src, README, requirements),
   and the filled-in `Documentation_template.md`. Top teams' packages are reproduced and audited.
+- Organisers' update on the problem page (26 Sep): `candidate_pairs.tsv` now counts toward the final ranking. Blocking
+  has to scale, and an approach with a smaller candidate set ranks higher in the final evaluation, beyond the
+  leaderboard score (read the full text on the Unstop problem page).
 
 ## Data
 
@@ -51,7 +54,8 @@ Working branch: `claude/quirky-cray-iffodx` (merged from `claude/rohit-intro-lwm
 The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
 
 Leaderboard on 26 Sep, 11:55 AM IST: 1st 0.9906, 6th 0.988, 50th 0.985 (only the top 50 reach the results).
-Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will rise before the deadline.
+Our v2 scores 0.957 on the public leaderboard (validation 0.965), so we need about +3 points, and the cutoff will
+rise before the deadline.
 
 - [x] Pipeline code
 - [x] Models: v1 val macro-F0.5 0.9660, v2 0.9654 (v2 is current; precision 0.984, recall 0.927, blocking recall 0.977)
@@ -59,7 +63,7 @@ Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will r
       91.55M candidate pairs (52.8 per entity). Matches per entity: France 3.17, India 3.20, US 3.27; predicted
       singletons 5.7-6.2%, so France behaves like the training countries. Both outputs pass
       `validate_submission.py --check-ids`.
-- [ ] Upload v2 to the portal to get the real test score. The zipped `matching_results.tsv` is in
+- [x] v2 uploaded on 26 Sep, 1:22 PM IST: public leaderboard 0.957. The zipped `matching_results.tsv` is in
       `submissions/v2/matching_results.zip` (the TSV is 90 MB and the chat can only send files up to 30 MiB).
 - The first v2 run was killed (out of memory) while writing `candidate_pairs.tsv`. `predict.py` now frees memory and
   writes the lists in chunks, and `--from-scores` rebuilds both outputs from `data/work/test_scored_<tag>.parquet`
@@ -74,6 +78,10 @@ Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will r
   5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
   For every change, pick the validation cutoff that keeps precision >= 0.984, and keep the change only if
   recall and macro F0.5 both rise.
+  Report candidates per entity next to recall for every change (v2: 52.8), since the candidate set size now counts in
+  the final ranking. Reverse blocking adds candidates, so keep its depth small, and add a cheap pruning stage (e.g. a
+  small model on the blocking scores) before the full features so the final candidate set shrinks. Fewer candidates
+  also cut the ~4 h feature time.
 - [ ] Documentation: only the false positive/negative examples are left (they need validation predictions). Team name,
       test candidate counts and the test-run statistics are filled in for v2; update them if the final model changes.
 - [ ] `./package.sh SJCM` with the final outputs. `candidate_pairs.tsv` is 1.2 GB, so the zip is far above the 30 MiB
