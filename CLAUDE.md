@@ -77,7 +77,11 @@ rise before the deadline.
      for the biggest bucket. Cross-source consensus was checked and dropped: on 30k training entities (110,588 true
      copies), only 2.2% of copies have name+address token-set similarity < 70 to their S1, and for the hardest
      0.8% the other copies are no closer than the S1 record (median 58 vs 57), so it could rescue about 1-2% of them.
-  3. Better transliteration of native-script words (the learned dictionary covers 92% of native tokens).
+  3. Transliteration is low priority: among the hardest copies (similarity to S1 < 60) only 1.9% have non-Latin
+     names, against 13.7% of all copies, so the learned dictionary already handles scripts well.
+  Team split (details and commands in `TEAM_SETUP.md`): Shreyash runs the error analysis on Kaggle, Aryan builds the
+  pruning stage on Kaggle, Arvind runs the 500k-entity training run and the final test run on AWS, and Rohit's chat
+  does reverse blocking plus mutual-best features and merges everyone's branches.
   4. Faster runs: cache features, reuse candidates (`--cand-tag`), a bigger machine if the team has AWS credits.
   5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
   For every change, pick the validation cutoff that keeps precision >= 0.984, and keep the change only if
