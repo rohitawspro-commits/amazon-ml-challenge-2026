@@ -1,5 +1,6 @@
 """Run the full pipeline on the test set and write output/matching_results.tsv + candidate_pairs.tsv."""
 import argparse
+import gc
 import json
 import os
 import time
@@ -23,6 +24,8 @@ def main():
     ap.add_argument("--reblock", nargs="*", default=[], help="countries to re-block even when reusing candidates")
     ap.add_argument("--q-chunk", type=int, default=40_000, help="queries per feature/predict chunk")
     ap.add_argument("--threshold", type=float, default=None, help="override tuned threshold")
+    ap.add_argument("--from-scores", action="store_true",
+                    help="reuse the cached test scores of this tag and only rerun the decision and the output writing")
     args = ap.parse_args()
     t0 = time.time()
 
@@ -63,31 +66,44 @@ def main():
     del pool
     pool = load_pool_normalised("test")  # full version for features
 
-    with timer("tf-idf spaces"):
-        tfidf = fit_tfidf(q, pool)
-    scored = []
     n_q = q.height
-    for start in range(0, n_q, args.q_chunk):
-        part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
-        if part.height == 0:
-            continue
-        with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
-            feats = build_features(part, q, pool, names, tfidf)
-            prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
-            scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
-            del feats
-    del tfidf
-    scored = pl.concat(scored)
-    scored.write_parquet(f"{WORK}/test_scored_{args.tag}.parquet")
+    scored_path = f"{WORK}/test_scored_{args.tag}.parquet"
+    if args.from_scores and os.path.exists(scored_path):
+        scored = pl.read_parquet(scored_path)
+    else:
+        with timer("tf-idf spaces"):
+            tfidf = fit_tfidf(q, pool)
+        scored = []
+        for start in range(0, n_q, args.q_chunk):
+            part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
+            if part.height == 0:
+                continue
+            with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
+                feats = build_features(part, q, pool, names, tfidf)
+                prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
+                scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
+                del feats
+        del tfidf
+        scored = pl.concat(scored)
+        scored.write_parquet(scored_path)
+    cand = cand.select("q", "p")
 
     pred = decide(scored, thr, conf["one_to_one"])
     ids = pool.select(pl.int_range(pl.len()).cast(pl.Int32).alias("p"), pl.col("entity_id").alias("pid"))
     s1_ids = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), pl.col("entity_id").alias("source1_entity_id"))
+    del scored, pool
+    gc.collect()
 
-    def write_lists(pairs: pl.DataFrame, col: str, path: str):
-        lists = pairs.join(ids, on="p").group_by("q").agg(pl.col("pid").str.join(",").alias(col))
-        out = s1_ids.join(lists, on="q", how="left").sort("q").select("source1_entity_id", pl.col(col).fill_null(""))
-        out.write_csv(path, separator="\t", quote_style="never")
+    def write_lists(pairs: pl.DataFrame, col: str, path: str, chunk: int = 100_000):
+        # Grouping all ~90M test candidate pairs in one go gets the process killed on a 15 GB machine.
+        with open(path, "wb") as f:
+            f.write(f"source1_entity_id\t{col}\n".encode())
+            for start in range(0, n_q, chunk):
+                part = pairs.filter((pl.col("q") >= start) & (pl.col("q") < start + chunk))
+                lists = part.join(ids, on="p").group_by("q").agg(pl.col("pid").str.join(",").alias(col))
+                out = s1_ids.slice(start, chunk).join(lists, on="q", how="left").sort("q") \
+                    .select("source1_entity_id", pl.col(col).fill_null(""))
+                out.write_csv(f, separator="\t", quote_style="never", include_header=False)
 
     with timer("writing outputs"):
         write_lists(pred.explode("ids").rename({"ids": "p"}), "matched_entity_ids", f"{OUT}/matching_results.tsv")

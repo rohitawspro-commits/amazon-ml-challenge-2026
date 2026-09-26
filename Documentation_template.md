@@ -1,6 +1,6 @@
 # ML Challenge 2026: Business Entity Resolution Solution Template
 
-**Team Name:** [TEAM NAME]
+**Team Name:** SJCM
 **Team Members:** Rohit, Shreyash Patil, Aryan, Arvind Prajapati
 **Submission Date:** 26 September 2026
 
@@ -99,8 +99,9 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   The channels are unioned; each channel's cosine score and rank are kept as features. Pruning
   frequent terms with `max_df` is what makes the sparse products tractable (the word channel
   processes 20k queries against 4.1M Indian records in ~36 s on 4 cores).
-* **Candidate pairs generated:** TBD_CAND_PAIRS on the test set (TBD_CAND_PER_Q per Source-1 entity;
-  reduction ratio ≈ 1 − TBD_CAND_PER_Q / 10M).
+* **Candidate pairs generated:** 91,553,641 on the test set, i.e. 52.8 per Source-1 entity across 1,732,544 entities
+  (5 entities get no candidate). Against all 1.73M × 9.97M Source-1 × Source-2/3 pairs the reduction ratio is
+  1 − 91.6M / 1.73e13 ≈ 0.999995.
 * **How you ensured true matches were not lost:** blocking recall is measured on a 250k-entity
   training sample against the *full* 10.3M-record training pool: **0.977** pair recall overall
   (word channel alone 0.972, name char channel 0.424, address char channel 0.813), with 53
@@ -180,4 +181,14 @@ decision rule, threshold search), `src/train.py` (training + threshold tuning) a
 
 ### B. Additional Results
 
-TBD_EXTRA
+Test-set run of the final model (v2) on 4 CPU cores and 15 GB RAM: normalisation 2.4 min, blocking about 2 h 50 min,
+features + scoring 3 h 45 min (6 h 41 min in total). Predicted matches per Source-1 entity and predicted singleton rate:
+
+| Country | Source-1 entities | Matches per entity | Predicted singletons |
+| ------- | ----------------: | -----------------: | -------------------: |
+| France  |           259,452 |               3.17 |                 5.7% |
+| India   |           809,986 |               3.20 |                 6.2% |
+| US      |           663,106 |               3.27 |                 5.9% |
+
+France has no training data, yet it gets about the same match rate as the two training countries (the training ground
+truth has 3.46 matches per entity and 5.6% singletons), which suggests the pipeline carries over to the unseen country.

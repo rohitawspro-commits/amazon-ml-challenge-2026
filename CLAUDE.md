@@ -55,8 +55,15 @@ Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will r
 
 - [x] Pipeline code
 - [x] Models: v1 val macro-F0.5 0.9660, v2 0.9654 (v2 is current; precision 0.984, recall 0.927, blocking recall 0.977)
-- [ ] Test predictions with v2 (started 26 Sep 00:38 UTC; ~7 h on 4 cores: blocking ~3 h, features + scoring ~4 h)
-- [ ] Validate and upload `matching_results.tsv` to the portal (gives the real test score)
+- [x] Test predictions with v2: 6 h 41 min on 4 cores (blocking 2 h 50 min, features + scoring 3 h 45 min),
+      91.55M candidate pairs (52.8 per entity). Matches per entity: France 3.17, India 3.20, US 3.27; predicted
+      singletons 5.7-6.2%, so France behaves like the training countries. Both outputs pass
+      `validate_submission.py --check-ids`.
+- [ ] Upload v2 to the portal to get the real test score. The zipped `matching_results.tsv` is in
+      `submissions/v2/matching_results.zip` (the TSV is 90 MB and the chat can only send files up to 30 MiB).
+- The first v2 run was killed (out of memory) while writing `candidate_pairs.tsv`. `predict.py` now frees memory and
+  writes the lists in chunks, and `--from-scores` rebuilds both outputs from `data/work/test_scored_<tag>.parquet`
+  in under a minute.
 - [ ] Improvements, big levers first. Recall is lost at the model stage (~5% of true pairs) more than at blocking (2.3%).
   1. Reverse blocking: for every S2/S3 record, find its top-5 S1 entities (each record belongs to at most one S1)
      and union them with the forward candidates. Add mutual-best-match features (is this S1 the record's best S1?).
@@ -67,7 +74,10 @@ Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will r
   5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
   For every change, pick the validation cutoff that keeps precision >= 0.984, and keep the change only if
   recall and macro F0.5 both rise.
-- [ ] Documentation TBDs: test candidate-pair counts, false positive/negative examples, appendix (team name: SJCM)
-- [ ] `./package.sh SJCM`
+- [ ] Documentation: only the false positive/negative examples are left (they need validation predictions). Team name,
+      test candidate counts and the test-run statistics are filled in for v2; update them if the final model changes.
+- [ ] `./package.sh SJCM` with the final outputs. `candidate_pairs.tsv` is 1.2 GB, so the zip is far above the 30 MiB
+      chat limit and GitHub's 100 MB file limit. Send it to the user in parts under 30 MiB (`split -b 29m`) and have
+      them join the parts with `cat SJCM_submission.zip.part-* > SJCM_submission.zip`.
 
 Update this section and push after every step.
