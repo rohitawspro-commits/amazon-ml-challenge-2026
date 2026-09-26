@@ -4,10 +4,8 @@ Deadline: **27 Sep, 11:59 PM IST**. Poora context `CLAUDE.md` mein hai.
 
 ## 1. Sabse pehle (Rohit, abhi)
 
-1. **Repo private karo.** Abhi repo public hai, aur isme hamara code, models aur v2 ka test output hai. Koi bhi team
-   ise copy karke submit kar sakti hai. GitHub pe repo kholo, phir Settings → General → sabse neeche "Danger Zone" →
-   Change visibility → Private.
-2. **Teammates ko access do:** Settings → Collaborators → Add people → Aryan aur Shreyash. Arvind ke paas pehle se hai.
+1. **Repo private hai** (26 Sep ko confirm kiya). Ise public mat karna, isme hamara code, models aur test output hai.
+2. **Access:** Aryan (`aryan7841`), Arvind (`arvi8080`) aur Shreyash (`Trimaxsteel`) collaborators hain.
 3. **Har koi apna GitHub token banaye** (private repo clone aur push karne ke liye): GitHub → Settings → Developer
    settings → Personal access tokens → Fine-grained tokens → Generate new token → Repository access: sirf
    `rohitawspro-commits/amazon-ml-challenge-2026` → Permissions: Contents = Read and write. Token kisi ko mat bhejna.
