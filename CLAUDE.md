@@ -82,6 +82,17 @@ rise before the deadline.
   Team split (details and commands in `TEAM_SETUP.md`): Shreyash runs the error analysis on Kaggle, Aryan builds the
   pruning stage on Kaggle, Arvind runs the 500k-entity training run and the final test run on AWS, and Rohit's chat
   does reverse blocking plus mutual-best features and merges everyone's branches.
+  Hybrid (target 0.98+): add a small cross-encoder that re-scores only the pairs LightGBM is unsure about.
+  - Model: `cross-encoder/ms-marco-MiniLM-L-6-v2` (Apache-2.0, 22M parameters) fine-tuned as a binary matcher with
+    sentence-transformers `CrossEncoder`. Input per side: "name: <core> | address: <naddr>" (normalised fields, so
+    native scripts are already transliterated), max_length 96, 1-2 epochs, lr 2e-5.
+  - Training pairs: labelled candidates from a `train.py` run (positives = ground truth), mostly pairs with LightGBM
+    probability between 0.02 and 0.98, plus a sample of confident ones.
+  - Blend on validation: p = (1 - w) * p_lgb + w * p_ce for the unsure pairs. Choose w and the cutoff with precision
+    >= 0.984, and keep the blend only if macro F0.5 rises.
+  - Compute: Shreyash fine-tunes on a Kaggle GPU after the error analysis; Arvind scores the unsure test pairs on the
+    32-core AWS machine (a few million short pairs is feasible on CPU). Save the weights in fp16 (~45 MB) so they
+    fit on GitHub.
   4. Faster runs: cache features, reuse candidates (`--cand-tag`), a bigger machine if the team has AWS credits.
   5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
   For every change, pick the validation cutoff that keeps precision >= 0.984, and keep the change only if
