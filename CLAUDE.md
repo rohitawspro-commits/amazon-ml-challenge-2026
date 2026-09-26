@@ -50,13 +50,24 @@ cd ../../../data/raw/student_resource && python3 utils/validate_submission.py \
 Working branch: `claude/quirky-cray-iffodx` (merged from `claude/rohit-intro-lwmrmr`).
 The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
 
+Leaderboard on 26 Sep, 11:55 AM IST: 1st 0.9906, 6th 0.988, 50th 0.985 (only the top 50 reach the results).
+Our v2 validation is 0.965, so we need at least +2 points, and the cutoff will rise before the deadline.
+
 - [x] Pipeline code
 - [x] Models: v1 val macro-F0.5 0.9660, v2 0.9654 (v2 is current; precision 0.984, recall 0.927, blocking recall 0.977)
-- [ ] Test predictions with v2 (started 26 Sep 00:38 UTC, log in `data/predict_v2.log`)
-- [ ] Validate and upload `matching_results.tsv` to the portal
-- [ ] Improvements, in order: blocking recall towards 0.99; per-entity expected-F0.5 decision instead of one threshold;
-      second-stage model with cross-candidate features (S2<->S3 agreement); more training data and a model ensemble
-- [ ] Documentation TBDs: team name, test candidate-pair counts, false positive/negative examples, appendix
+- [ ] Test predictions with v2 (started 26 Sep 00:38 UTC; ~7 h on 4 cores: blocking ~3 h, features + scoring ~4 h)
+- [ ] Validate and upload `matching_results.tsv` to the portal (gives the real test score)
+- [ ] Improvements, big levers first. Recall is lost at the model stage (~5% of true pairs) more than at blocking (2.3%).
+  1. Reverse blocking: for every S2/S3 record, find its top-5 S1 entities (each record belongs to at most one S1)
+     and union them with the forward candidates. Add mutual-best-match features (is this S1 the record's best S1?).
+  2. Cross-source consensus: link S2/S3 copies of the same business to each other (3.46 copies per S1 on average),
+     then use them together, e.g. a second-stage model with "similarity to this entity's most confident match".
+  3. Better transliteration of native-script words (the learned dictionary covers 92% of native tokens).
+  4. Faster runs: cache features, reuse candidates (`--cand-tag`), a bigger machine if the team has AWS credits.
+  5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
+  For every change, pick the validation cutoff that keeps precision >= 0.984, and keep the change only if
+  recall and macro F0.5 both rise.
+- [ ] Documentation TBDs: test candidate-pair counts, false positive/negative examples, appendix (team name: SJCM)
 - [ ] `./package.sh SJCM`
 
 Update this section and push after every step.
