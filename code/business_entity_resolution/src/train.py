@@ -8,6 +8,7 @@ Steps: normalise -> block (per country, forward and reverse) -> label from groun
 --block-only stops after blocking and its recall report (models/blocking_<tag>.json).
 """
 import argparse
+import gc
 import json
 import os
 import time
@@ -180,7 +181,9 @@ def main():
     t0 = time.time()
     # reverse blocking searches the whole Source 1: normalise it all once (cached) and sample from it
     s1 = load_s1_normalised("train") if rev_names else load_s1("train")
-    pool = load_pool_normalised("train", BLOCK_LOAD_COLS)  # light version for blocking
+    cand_path = f"{WORK}/train_cand_{cfg.cand_tag or cfg.tag}.parquet"
+    reuse_cand = cfg.reuse_cand and os.path.exists(cand_path)
+    pool = load_pool_normalised("train", ["entity_id"] if reuse_cand else BLOCK_LOAD_COLS)  # light version for blocking
     gt = load_ground_truth()
 
     rng = np.random.default_rng(cfg.seed)
@@ -190,7 +193,7 @@ def main():
         with timer(f"normalise {q.height:,} queries"):
             q = normalize_frame(q)
     u = None
-    if rev_names:  # reverse-search universe; 'q' = the entity's row in the query sample, null if not sampled
+    if rev_names and not reuse_cand:  # reverse-search universe; 'q' = the entity's row in the query sample, null if not sampled
         pos = np.full(s1.height, -1, dtype=np.int32)
         pos[idx] = np.arange(len(idx), dtype=np.int32)
         u = s1.select(["country"] + BLOCK_COLS).with_columns(q=pl.Series(pos)) \
@@ -203,8 +206,7 @@ def main():
     truth_pairs = gt.join(qid, on="source1_entity_id").join(pid, on="p_id").select("q", "p")
     n_truth = truth_pairs.height
 
-    cand_path = f"{WORK}/train_cand_{cfg.cand_tag or cfg.tag}.parquet"
-    if cfg.reuse_cand and os.path.exists(cand_path):
+    if reuse_cand:
         cand = pl.read_parquet(cand_path)
         print(f"[blocking] reusing {cand.height:,} cached candidates from {cand_path}", flush=True)
     else:
@@ -214,6 +216,7 @@ def main():
             .with_columns(pl.col("label").fill_null(0))
         cand.write_parquet(cand_path)
     del pool, u
+    gc.collect()
     found = int(cand["label"].sum())
     per_ch = " | ".join(f"{n}={int(cand.filter(pl.col(f'{n}_rank') < 99)['label'].sum()) / n_truth:.4f}" for n in names)
     print(f"[blocking] candidates={cand.height:,} ({cand.height / q.height:.1f}/query) | truth pairs={n_truth:,} "
@@ -256,8 +259,9 @@ def main():
     # queries 0..n_train-1 are the training split, the rest validation (see sampling above)
     lf = pl.scan_parquet(paths)
     is_tr = pl.col("q") < cfg.n_train
-    tr = lf.filter(is_tr).select("q", "p", "label").collect()
-    va = lf.filter(~is_tr).select("q", "p", "label").collect()
+    # file by file, in the same order as load_matrix fills the feature matrices
+    tr = pl.concat([pl.scan_parquet(f).filter(is_tr).select("q", "p", "label").collect() for f in paths])
+    va = pl.concat([pl.scan_parquet(f).filter(~is_tr).select("q", "p", "label").collect() for f in paths])
     y_tr, y_va = tr["label"].to_numpy(), va["label"].to_numpy()
     print(f"[data] train pairs={len(y_tr):,} (pos={y_tr.mean():.3f}) | val pairs={len(y_va):,}", flush=True)
     val_q = q.with_row_index("q").filter(pl.col("split") == "val").select(pl.col("q").cast(pl.Int32), "country")
@@ -279,8 +283,12 @@ def main():
         with timer("load features"):
             X_va = load_matrix(paths, FEATURES, ~is_tr)
             X_tr = load_matrix(paths, FEATURES, is_tr)
-        dtr = lgb.Dataset(X_tr, y_tr, feature_name=FEATURES, free_raw_data=False)
+        dtr = lgb.Dataset(X_tr, y_tr, feature_name=FEATURES, free_raw_data=True)
         dva = lgb.Dataset(X_va, y_va, reference=dtr, free_raw_data=False)
+        with timer("bin features"):  # a 15 GB machine cannot hold the raw matrix next to the binned one for long
+            dtr.construct()
+        del X_tr
+        gc.collect()
         fold_of_q = tr["q"].to_numpy() % max(cfg.folds, 1)  # queries are already a random permutation
         oof = np.full(len(y_tr), np.nan, dtype=np.float32)
         fold_iters = []
@@ -290,7 +298,9 @@ def main():
                 with timer(f"stage 1 fold {k + 1}/{cfg.folds} ({int((~ho).sum()):,} train pairs)"):
                     mk = lgb.train(params, dtr.subset(np.flatnonzero(~ho)), num_boost_round=cfg.rounds, valid_sets=[dva],
                                    callbacks=[lgb.early_stopping(100, verbose=False), lgb.log_evaluation(500)])
-                    oof[ho] = mk.predict(X_tr[ho], num_threads=n_cpu)
+                    X_ho = load_matrix(paths, FEATURES, is_tr & ((pl.col("q") % cfg.folds) == k))
+                    oof[ho] = mk.predict(X_ho, num_threads=n_cpu)
+                    del X_ho
                 fold_iters.append(mk.best_iteration)
                 print(f"[stage1] fold {k + 1}: best_iteration={mk.best_iteration} val_logloss={mk.best_score['valid_0']['binary_logloss']:.5f}")
                 del mk
@@ -305,7 +315,8 @@ def main():
         s1s = pl.concat([tr.with_columns(prob=pl.Series(oof), split=pl.lit("train")),
                          va.with_columns(prob=pl.Series(p1_va), split=pl.lit("val"))])
         s1s.write_parquet(stage1_path)
-        del X_tr, X_va, dtr, dva
+        del X_va, dtr, dva
+        gc.collect()
     va_scored = s1s.filter(pl.col("split") == "val").select("q", "p", "prob")
     va_scored.write_parquet(f"{WORK}/val_scored1_{cfg.tag}.parquet")
     res1 = evaluate("stage 1", va_scored, truth, cfg, per_country=val_q)

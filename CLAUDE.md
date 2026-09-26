@@ -93,8 +93,17 @@ rise before the deadline.
      Caveat: the sample holds 11% of Source 1, so a record's competing S1s are thinner in training than at test time,
      where every S1 is a query. The reverse-cosine margins are computed over the whole Source 1 and are test-consistent;
      the stage-2 probability margins are not, so a stage-2 gain on validation may shrink on the test set.
-     Running: `train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08` (v4 normalisation, started 26 Sep
-     ~10:00 UTC, ~6-7 h on 4 cores; log in the container only). It prints the full blocking report (US + India, reverse
+     Full blocking report, v4 normalisation, 50k validation split (US + India; `models/blocking_v4rev.json`):
+     forward 0.9776 at 53.1 cand/query; +reverse top-1 0.9822 (55.9), top-2 0.9837 (62.5), top-3 0.9846 (71.2),
+     top-5 0.9856 (90.1). Reverse alone: top-1 0.9502 at 8.6 cand/query, top-2 0.9622 at 19.8, top-3 0.9675 at 31.7,
+     i.e. a record's nearest S1 is the true one for 95% of true pairs. With depth 2 the candidate set is 62.8/entity
+     at recall 0.9838 (v2: 53.1 at 0.9767). A reverse-only shortlist (top-2/3) would be 2-3x smaller than forward
+     blocking for 1-2 points of blocking recall: an option if the candidate count matters more in the final ranking.
+     Blocking took 4.6 h on 4 cores (the reverse pass is as large as forward blocking over all of Source 1), features
+     3.5 min. The first run died out of memory (exit 137) when LightGBM binned 12.6M x 95 features next to the raw
+     matrix; train.py now frees the raw matrix after binning and reloads each held-out fold, and reuses the cached
+     candidates and features: `train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08 --reuse-cand
+     --reuse-feats` (restarted 26 Sep ~14:50 UTC, ~2 h; log in the container only). It prints the full blocking report (US + India, reverse
      top-1 recall), stage 1 and stage 2 validation at precision >= 0.984 with per-country numbers, and the v2 comparison;
      the results land in `models/config_v4rev.json` and `models/blocking_v4rev.json`. `predict.py --tag v4rev` runs
      both stages on the test set (reverse blocking roughly doubles test blocking time).
