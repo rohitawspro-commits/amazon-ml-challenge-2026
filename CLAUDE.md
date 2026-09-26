@@ -71,6 +71,17 @@ rise before the deadline.
 - [ ] Improvements, big levers first. Recall is lost at the model stage (~5% of true pairs) more than at blocking (2.3%).
   1. Reverse blocking: for every S2/S3 record, find its top-5 S1 entities (each record belongs to at most one S1)
      and union them with the forward candidates. Add mutual-best-match features (is this S1 the record's best S1?).
+     Core idea: decide from the record's side. True copies are very similar to their own S1, so for each record
+     the useful signals are its best S1 and the margin to the second-best S1 (reverse cosine gap), and after the
+     first LightGBM pass a second stage per record: its best and second-best probability, their gap, and whether
+     this S1 is its top choice. Train the second stage on out-of-fold first-stage scores. Report reverse top-1
+     recall: it says how often a record's best S1 is its true S1.
+- Leaderboard probes (26 Sep): `submissions/probes/matching_results_noFR.zip` and `_noIN.zip` are v2 with every
+  France (or India) row left empty; both pass the validator. Test shares: France 0.150, India 0.4675, US 0.3827;
+  predicted empty rates: France 0.057, India 0.062, US 0.059. With LB scores v2 = 0.957, noFR and noIN:
+  France avg F0.5 ~ (0.957 - noFR) / 0.150 + 0.057, India ~ (0.957 - noIN) / 0.4675 + 0.062,
+  US ~ (0.957 - 0.150 * France - 0.4675 * India) / 0.3827 (assumes the public subset has the same country mix;
+  3-decimal scores make the France estimate good to about +-0.005). A weak country is where to spend effort.
   2. Error analysis before any new feature: on validation, split missed matches into "not in the shortlist",
      "in the shortlist but below the cutoff" and "removed by one-to-one", and wrong matches into "same name,
      different address", "same address, different business" and "other", with ~20 examples each; build features
