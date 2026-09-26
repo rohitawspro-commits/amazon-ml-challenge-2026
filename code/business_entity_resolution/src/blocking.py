@@ -9,12 +9,13 @@ Reverse blocking (channels with `rev_top_n` > 0): in the same TF-IDF space every
 retrieves its top `rev_top_n` Source-1 entities, and those pairs join the union. A pool record
 belongs to at most one entity, so its nearest entities are good candidates even when the entity's
 own top-N is crowded out (chains, generic names). The reverse search always covers the whole
-Source 1 of the country (training passes it apart from its query sample), so reverse ranks mean
-the same at training and test time.
+Source 1 of the country (training passes it apart from its query sample), so reverse ranks and the
+record-side margins mean the same at training and test time.
 
 Each country's candidates are written to parquet as soon as they are ready, so the peak
 memory is that of one country's channels, not of the whole test set.
 """
+import multiprocessing as mp
 import os
 
 import numpy as np
@@ -35,6 +36,10 @@ DEFAULT_CHANNELS = [
 BLOCK_COLS = ["core", "naddr", "both"]
 
 
+def rev_channel_names(channels):
+    return [c["name"] for c in channels if c.get("rev_top_n", 0)]
+
+
 def _vectorizer(ch):
     kw = dict(analyzer=ch["analyzer"], min_df=2, max_df=ch["max_df"], dtype=np.float32, sublinear_tf=True)
     if ch["analyzer"] == "word":
@@ -44,25 +49,44 @@ def _vectorizer(ch):
     return TfidfVectorizer(**kw)
 
 
-def _topn(rows, n_rows, colsT, top_n, thr, chunk):
+# The sparse products run in forked worker processes (one chunk of rows each, single-threaded), which
+# also parallelises the TF-IDF transform of the queries. Workers read these globals set before the fork.
+_G = {}
+_MIN_CHUNK = int(os.environ.get("ER_MIN_CHUNK", 5_000))  # rows per task; small values only for tests
+
+
+def _topn_worker(task):
+    start, end, top_n, thr = task
+    C = sparse.csr_matrix(sp_matmul_topn(_G["rows"](start, end), _G["colsT"], top_n=top_n, threshold=thr,
+                                         sort=True, n_threads=1))
+    counts = np.diff(C.indptr)
+    row = (np.repeat(np.arange(C.shape[0], dtype=np.int64), counts) + start).astype(np.int32)
+    rank = (np.arange(len(C.indices)) - np.repeat(C.indptr[:-1], counts)).astype(np.int8)
+    return row, C.indices.astype(np.int32), C.data.astype(np.float32), rank
+
+
+def _topn(rows, n_rows, colsT, top_n, thr, procs=N_THREADS, max_chunk=150_000):
     """Top-N cosine neighbours of every row. rows(start, end) returns that block of TF-IDF rows and
     colsT is the transposed matrix of what is retrieved. Returns a (row, col, cos, rank) frame."""
-    parts = []
-    for start in range(0, n_rows, chunk):
-        C = sparse.csr_matrix(sp_matmul_topn(rows(start, start + chunk), colsT, top_n=top_n, threshold=thr,
-                                             sort=True, n_threads=N_THREADS))
-        counts = np.diff(C.indptr)
-        row = np.repeat(np.arange(C.shape[0], dtype=np.int64), counts) + start
-        rank = np.arange(len(C.indices)) - np.repeat(C.indptr[:-1], counts)
-        parts.append(pl.DataFrame({
-            "row": row.astype(np.int32), "col": C.indices.astype(np.int32),
-            "cos": C.data.astype(np.float32), "rank": rank.astype(np.int8),
-        }))
     empty = pl.DataFrame(schema={"row": pl.Int32, "col": pl.Int32, "cos": pl.Float32, "rank": pl.Int8})
+    if n_rows == 0:
+        return empty
+    chunk = max(_MIN_CHUNK, min(max_chunk, -(-n_rows // (2 * procs))))
+    tasks = [(s, min(s + chunk, n_rows), top_n, thr) for s in range(0, n_rows, chunk)]
+    _G["rows"], _G["colsT"] = rows, colsT
+    try:
+        if procs > 1 and len(tasks) > 1:
+            with mp.get_context("fork").Pool(procs) as pool:
+                results = pool.map(_topn_worker, tasks, chunksize=1)
+        else:
+            results = [_topn_worker(t) for t in tasks]
+    finally:
+        _G.clear()
+    parts = [pl.DataFrame({"row": r, "col": c, "cos": d, "rank": k}) for r, c, d, k in results if len(r)]
     return pl.concat(parts) if parts else empty
 
 
-def _topn_channel(queries, docs, ch, universe=None, q_chunk=150_000):
+def _topn_channel(queries, docs, ch, universe=None):
     """Forward: top-N docs (pool records) of every query, as a (q, p, cos, rank) frame of local indices.
 
     With `universe` (Source-1 texts) also the reverse top `rev_top_n` universe entities of every doc, as a
@@ -74,12 +98,12 @@ def _topn_channel(queries, docs, ch, universe=None, q_chunk=150_000):
     PT = sparse.csr_matrix(P.T)
     if universe is None:
         del P
-    fwd = _topn(lambda s, e: vec.transform(queries[s:e]), len(queries), PT, ch["top_n"], ch["thr"], q_chunk)
+    fwd = _topn(lambda s, e: vec.transform(queries[s:e]), len(queries), PT, ch["top_n"], ch["thr"])
     del PT
     rev = None
     if universe is not None:
         UT = sparse.csr_matrix(vec.transform(universe).T)
-        rev = _topn(lambda s, e: P[s:e], P.shape[0], UT, ch["rev_top_n"], ch["thr"], q_chunk)
+        rev = _topn(lambda s, e: P[s:e], P.shape[0], UT, ch["rev_top_n"], ch["thr"])
         rev = rev.rename({"row": "p", "col": "u"})
         del P, UT
     return fwd.rename({"row": "q", "col": "p"}), rev
@@ -90,10 +114,10 @@ def cand_schema(channels):
     for ch in channels:
         schema[f"{ch['name']}_cos"] = pl.Float32
         schema[f"{ch['name']}_rank"] = pl.Int8
-    for ch in channels:
-        if ch.get("rev_top_n", 0):
-            schema[f"{ch['name']}_rrank"] = pl.Int8
-            schema[f"{ch['name']}_rbest"] = pl.Float32
+    for n in rev_channel_names(channels):
+        schema[f"{n}_rrank"] = pl.Int8
+        schema[f"{n}_rbest"] = pl.Float32
+        schema[f"{n}_r2nd"] = pl.Float32
     return schema
 
 
@@ -105,7 +129,8 @@ def block_country(q_df: pl.DataFrame, p_df: pl.DataFrame, channels, u_df: pl.Dat
     entity, null for entities that are not queries.
     Returns columns: q, p (global indices), <ch>_cos / <ch>_rank per channel (rank 99 = not in the query's
     top-N) and for reverse channels <ch>_rrank (rank of the query among the pool record's reverse
-    neighbours, 99 = not among them) and <ch>_rbest (the pool record's best reverse cosine).
+    neighbours, 99 = not among them), <ch>_rbest / <ch>_r2nd (the record's best and second-best reverse
+    cosine over the whole Source 1, whichever entities those are).
     """
     u_df = q_df if u_df is None else u_df
     qg, pg = q_df["gidx"].to_numpy(), p_df["gidx"].to_numpy()
@@ -121,21 +146,32 @@ def block_country(q_df: pl.DataFrame, p_df: pl.DataFrame, channels, u_df: pl.Dat
                                     f"{n}_cos": f["cos"], f"{n}_rank": f["rank"]}))
         if r is not None:
             r = r.with_columns(q=u_df["gidx"].gather(r["u"]), p=pl.Series(pg[r["p"].to_numpy()]))
-            best.append(r.filter(pl.col("rank") == 0).select("p", pl.col("cos").alias(f"{n}_rbest")))
+            best.append(r.filter(pl.col("rank") < 2).group_by("p").agg(
+                pl.col("cos").max().alias(f"{n}_rbest"), pl.col("cos").min().alias(f"{n}_r2nd"), pl.len().alias("k"))
+                .with_columns(pl.when(pl.col("k") > 1).then(pl.col(f"{n}_r2nd")).otherwise(0.0)).drop("k"))
             frames.append(r.filter(pl.col("q").is_not_null())
                           .select("q", "p", pl.col("cos").alias(f"{n}_cos"), pl.col("rank").alias(f"{n}_rrank")))
         del f, r
     schema = cand_schema(channels)
-    value_cols = [c for c in schema if c not in ("q", "p") and not c.endswith("_rbest")]
+    value_cols = [c for c in schema if c not in ("q", "p") and not c.endswith(("_rbest", "_r2nd"))]
     # union of channels and directions: one row per (q, p); max() ignores the nulls of the other frames
     out = (pl.concat(frames, how="diagonal_relaxed")
            .group_by(["q", "p"]).agg([pl.col(c).max() for c in value_cols])
            .with_columns([pl.col(c).fill_null(0.0 if c.endswith("_cos") else 99) for c in value_cols]))
     del frames
-    for b in best:  # the pool record's best reverse cosine, whichever entity it is
+    for b in best:  # the pool record's best / second-best reverse cosine, whichever entities those are
         out = out.join(b, on="p", how="left")
-    return (out.with_columns([pl.col(c).fill_null(0.0) for c in schema if c.endswith("_rbest")])
+    return (out.with_columns([pl.col(c).fill_null(0.0) for c in schema if c.endswith(("_rbest", "_r2nd"))])
             .select(list(schema)).cast(schema).sort(["q", "p"]))
+
+
+def keep_depth(cand: pl.DataFrame, channels, depth) -> pl.DataFrame:
+    """Drop the reverse-only candidates beyond reverse rank `depth` (a pair stays if a forward channel found it)."""
+    rev = rev_channel_names(channels)
+    if not rev or depth is None:
+        return cand
+    fwd = pl.any_horizontal([pl.col(f"{c['name']}_rank") < 99 for c in channels])
+    return cand.filter(fwd | pl.any_horizontal([pl.col(f"{n}_rrank") < depth for n in rev]))
 
 
 def block_all(q_df: pl.DataFrame, p_df: pl.DataFrame, channels=None, countries=None, out_prefix=None,

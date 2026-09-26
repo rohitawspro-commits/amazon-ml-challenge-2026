@@ -43,7 +43,16 @@ def group_cols(channel_names):
             + [f"{c}_cos" for c in channel_names])
 
 
-def feature_names(channel_names):
+def reverse_features(rev_names):
+    """Record-side features from reverse blocking (rev_names = channels with rev_top_n > 0):
+    rrank: this entity's rank among the record's nearest Source-1 entities (99 = not among them);
+    rtop: it is the record's top choice; rbest / rgap: the record's best reverse cosine and its margin over
+    the second-best entity in the whole Source 1; rdiff: this pair's cosine minus the record's best."""
+    per = [f"{n}_{s}" for n in rev_names for s in ("rrank", "rtop", "rbest", "rgap", "rdiff")]
+    return per + (["n_rtop", "min_rrank"] if rev_names else [])
+
+
+def feature_names(channel_names, rev_names=()):
     g = group_cols(channel_names)
     return (
         [n for n, _, _ in _STRING_SCORERS] + [n for n, _ in _WCOS]
@@ -51,6 +60,7 @@ def feature_names(channel_names):
         + _SET_FEATURES
         + [f"{c}_maxq" for c in g] + [f"{c}_dmax" for c in g]
         + ["n_cand_q", "combo_rank_q"]
+        + reverse_features(rev_names)
     )
 
 
@@ -72,7 +82,8 @@ def _tok(col):
     return pl.col(col).str.split(" ").list.eval(pl.element().filter(pl.element() != ""))
 
 
-def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names, tfidf) -> pl.DataFrame:
+def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names, tfidf,
+                   rev_names=()) -> pl.DataFrame:
     """cand has q/p global indices + blocking scores; q_df/p_df are the normalised frames."""
     qi = cand["q"].to_numpy()
     pi = cand["p"].to_numpy()
@@ -141,11 +152,22 @@ def build_features(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, c
            pl.col("combo").rank(method="ordinal", descending=True).over("q").cast(pl.Float32).alias("combo_rank_q")]
     ).with_columns([(pl.col(c) - pl.col(f"{c}_maxq")).alias(f"{c}_dmax") for c in g])
 
-    return df.select(["q", "p"] + [pl.col(c).cast(pl.Float32) for c in feature_names(channel_names)])
+    # 4) the record's side: where this entity stands among the record's nearest Source-1 entities
+    if rev_names:
+        df = df.with_columns(
+            [(pl.col(f"{n}_rrank") == 0).cast(pl.Float32).alias(f"{n}_rtop") for n in rev_names]
+            + [(pl.col(f"{n}_rbest") - pl.col(f"{n}_r2nd")).alias(f"{n}_rgap") for n in rev_names]
+            + [(pl.col(f"{n}_cos") - pl.col(f"{n}_rbest")).alias(f"{n}_rdiff") for n in rev_names]
+        ).with_columns(
+            n_rtop=pl.sum_horizontal([pl.col(f"{n}_rtop") for n in rev_names]),
+            min_rrank=pl.min_horizontal([pl.col(f"{n}_rrank") for n in rev_names]),
+        )
+
+    return df.select(["q", "p"] + [pl.col(c).cast(pl.Float32) for c in feature_names(channel_names, rev_names)])
 
 
 def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.DataFrame, channel_names, tfidf,
-                           out_prefix: str, q_chunk: int = 40_000, log=None):
+                           out_prefix: str, q_chunk: int = 40_000, log=None, rev_names=()):
     """build_features over ranges of query indices, writing one parquet file per chunk.
 
     Keeps peak memory bounded (strings + list columns exist for one chunk only). A 'label' column
@@ -159,7 +181,7 @@ def build_features_chunked(cand: pl.DataFrame, q_df: pl.DataFrame, p_df: pl.Data
         if part.height == 0:
             continue
         feats = build_features(part.drop("label") if "label" in part.columns else part, q_df, p_df,
-                               channel_names, tfidf)
+                               channel_names, tfidf, rev_names)
         if "label" in part.columns:
             feats = feats.with_columns(part["label"])
         path = f"{out_prefix}_{i:03d}.parquet"

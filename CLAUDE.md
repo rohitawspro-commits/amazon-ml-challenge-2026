@@ -37,11 +37,13 @@ so keep copies of outputs outside the container.
 ## Pipeline
 
 See `code/business_entity_resolution/README.md` and `Documentation_template.md` for details.
-normalise -> per-country TF-IDF blocking (3 channels) -> ~65 pairwise features -> LightGBM -> threshold + one-to-one.
+normalise -> per-country TF-IDF blocking (3 channels, forward + reverse) -> ~80 pairwise and record-side features
+-> stage-1 LightGBM (out-of-fold) -> stage-2 LightGBM from the record's side -> threshold (precision floor) + one-to-one.
 
 ```bash
 cd code/business_entity_resolution/src
-python3 train.py --tag v2 --n-train 200000 --n-val 50000   # ~12 GB RAM, 45-60 min on 4 cores
+python3 train.py --tag v2 --n-train 200000 --n-val 50000   # ~12 GB RAM, 45-60 min on 4 cores (forward blocking, stage 1 only)
+python3 train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08   # + reverse blocking, margins, stage 2; ~6-7 h
 python3 predict.py --tag v2                                # writes output/*.tsv
 cd ../../../data/raw/student_resource && python3 utils/validate_submission.py \
   --matching ../../../output/matching_results.tsv --candidate ../../../output/candidate_pairs.tsv --test-dir dataset/test
@@ -76,6 +78,26 @@ rise before the deadline.
      first LightGBM pass a second stage per record: its best and second-best probability, their gap, and whether
      this S1 is its top choice. Train the second stage on out-of-fold first-stage scores. Report reverse top-1
      recall: it says how often a record's best S1 is its true S1.
+     Done (26 Sep, Rohit's chat): `--rev-top-n N` runs the reverse search in every channel over the whole Source 1;
+     candidates carry `<ch>_rrank` (this S1's rank among the record's nearest S1s), `<ch>_rbest` / `_r2nd` (the record's
+     best and second-best reverse cosine). Margin features `<ch>_rtop`, `_rgap` (= rbest - r2nd), `_rdiff` (= cos - rbest),
+     `n_rtop`, `min_rrank`. `--rev-depth K` keeps reverse-only pairs up to rank K (default auto = smallest depth within
+     0.0005 recall of the full depth). `stage2.py` + `--folds F`: stage 1 is trained out-of-fold over the training
+     queries, stage 2 re-scores each pair with the record's best / second-best stage-1 probability, the margin over the
+     record's strongest other S1, whether this S1 is its top choice, the same from the entity's side, plus the reverse
+     margins. Thresholds are picked with `--min-prec 0.984`; `--reuse-cand/--reuse-feats/--reuse-stage1` resume a run.
+     India blocking recall, 50k validation split, v3 normalisation (forward = 0.9617 at 52.8 cand/query):
+     +reverse top-1 0.9671 (56.1), top-2 0.9695 (62.8), top-3 0.9709 (72.1), top-5 0.9729 (89.8). Reverse top-1 alone
+     finds the true S1 for 92.0% of true pairs with 8.8 cand/query (word channel alone 90.2% at 4.6; n3 27.6%, a4 71.2%),
+     so a record's nearest entity is usually the right one. Depth 2 chosen: most of the gain for +10 candidates/entity.
+     Caveat: the sample holds 11% of Source 1, so a record's competing S1s are thinner in training than at test time,
+     where every S1 is a query. The reverse-cosine margins are computed over the whole Source 1 and are test-consistent;
+     the stage-2 probability margins are not, so a stage-2 gain on validation may shrink on the test set.
+     Running: `train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08` (v4 normalisation, started 26 Sep
+     ~10:00 UTC, ~6-7 h on 4 cores; log in the container only). It prints the full blocking report (US + India, reverse
+     top-1 recall), stage 1 and stage 2 validation at precision >= 0.984 with per-country numbers, and the v2 comparison;
+     the results land in `models/config_v4rev.json` and `models/blocking_v4rev.json`. `predict.py --tag v4rev` runs
+     both stages on the test set (reverse blocking roughly doubles test blocking time).
 - Leaderboard probes (26 Sep): `submissions/probes/matching_results_noFR.zip` and `_noIN.zip` are v2 with every
   France (or India) row left empty; both pass the validator. Test shares: France 0.150, India 0.4675, US 0.3827;
   predicted empty rates: France 0.057, India 0.062, US 0.059. With LB scores v2 = 0.957, noFR and noIN:

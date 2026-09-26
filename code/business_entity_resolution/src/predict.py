@@ -1,20 +1,22 @@
 """Run the full pipeline on the test set and write output/matching_results.tsv + candidate_pairs.tsv."""
 import argparse
 import gc
+import glob
 import json
 import os
 import time
 
 import lightgbm as lgb
+import numpy as np
 import polars as pl
 
-from blocking import block_all
+import stage2
+from blocking import block_all, keep_depth, rev_channel_names
 from common import MODELS, OUT, WORK, load_s1, timer
-from train import BLOCK_LOAD_COLS
 from features import build_features, fit_tfidf
 from metrics import decide
 from normalize import NORM_VERSION, normalize_frame
-from train import load_pool_normalised
+from train import BLOCK_LOAD_COLS, load_pool_normalised
 
 
 def main():
@@ -28,13 +30,18 @@ def main():
                     help="reuse the cached test scores of this tag and only rerun the decision and the output writing")
     args = ap.parse_args()
     t0 = time.time()
+    n_cpu = os.cpu_count()
 
     conf = json.load(open(f"{MODELS}/config_{args.tag}.json"))
     channels = conf["blocking"]["channels"]
     names = [c["name"] for c in channels]
+    rev_names = rev_channel_names(channels)
+    rev_depth = conf["blocking"].get("rev_depth")
     FEATURES = conf["features"]
     thr = args.threshold if args.threshold is not None else conf["threshold"]
     model = lgb.Booster(model_file=f"{MODELS}/lgb_{args.tag}.txt")
+    s2 = conf.get("stage2")
+    model2 = lgb.Booster(model_file=f"{MODELS}/lgb2_{args.tag}.txt") if s2 else None
 
     pool = load_pool_normalised("test", BLOCK_LOAD_COLS)  # light version for blocking
     q_path = f"{WORK}/test_s1_norm_{NORM_VERSION}.parquet"
@@ -47,6 +54,7 @@ def main():
         q.write_parquet(q_path)
         del s1
 
+    # every test entity is a query, so the queries are also the universe of reverse blocking
     cand_path = f"{WORK}/test_cand_{args.tag}.parquet"
     src_path = f"{WORK}/test_cand_{args.cand_tag}.parquet" if args.cand_tag else cand_path
     if os.path.exists(src_path):
@@ -62,7 +70,9 @@ def main():
         with timer("blocking (test)"):
             cand = block_all(q, pool, channels, out_prefix=f"{WORK}/test_block_{args.tag}")
         cand.write_parquet(cand_path)
-    print(f"[blocking] {cand.height:,} candidate pairs ({cand.height / q.height:.1f}/query)", flush=True)
+    cand = keep_depth(cand, channels, rev_depth)  # the cache keeps the full reverse depth
+    print(f"[blocking] {cand.height:,} candidate pairs ({cand.height / q.height:.1f}/query)"
+          + (f" at reverse depth {rev_depth}" if rev_names else ""), flush=True)
     del pool
     pool = load_pool_normalised("test")  # full version for features
 
@@ -73,22 +83,43 @@ def main():
     else:
         with timer("tf-idf spaces"):
             tfidf = fit_tfidf(q, pool)
-        scored = []
-        for start in range(0, n_q, args.q_chunk):
+        # pass 1: pair features + stage-1 probability, one parquet per chunk of queries (with the pair columns
+        # stage 2 reads back, since a record's candidates span many chunks)
+        pcols = s2["pair_cols"] if s2 else []
+        prefix = f"{WORK}/test_stage1_{args.tag}"
+        for old in glob.glob(f"{prefix}_*.parquet"):
+            os.remove(old)
+        chunks = []
+        for i, start in enumerate(range(0, n_q, args.q_chunk)):
             part = cand.filter((pl.col("q") >= start) & (pl.col("q") < start + args.q_chunk))
             if part.height == 0:
                 continue
             with timer(f"features+predict queries {start:,}-{min(start + args.q_chunk, n_q):,} ({part.height:,} pairs)"):
-                feats = build_features(part, q, pool, names, tfidf)
-                prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=os.cpu_count())
-                scored.append(feats.select("q", "p").with_columns(prob=pl.Series(prob, dtype=pl.Float32)))
+                feats = build_features(part, q, pool, names, tfidf, rev_names)
+                prob = model.predict(feats.select(FEATURES).to_numpy(), num_threads=n_cpu)
+                path = f"{prefix}_{i:03d}.parquet"
+                feats.select(["q", "p"] + pcols).with_columns(prob=pl.Series(prob, dtype=pl.Float32)).write_parquet(path)
+                chunks.append(path)
                 del feats
         del tfidf
-        scored = pl.concat(scored)
+        if s2:
+            # pass 2: the record's side of the stage-1 probabilities, then the stage-2 model
+            with timer("stage 2"):
+                agg_p, agg_q = stage2.aggregates(pl.scan_parquet(chunks).select("q", "p", "prob").collect())
+                scored = []
+                for path in chunks:
+                    f2 = stage2.build(pl.read_parquet(path), agg_p, agg_q, rev_names)
+                    p2 = model2.predict(f2.select(s2["features"]).to_numpy(), num_threads=n_cpu)
+                    scored.append(f2.select("q", "p", pl.col("prob").alias("prob1")).with_columns(prob=pl.Series(p2, dtype=pl.Float32)))
+                    del f2
+                scored = pl.concat(scored)
+                del agg_p, agg_q
+        else:
+            scored = pl.scan_parquet(chunks).select("q", "p", "prob").collect()
         scored.write_parquet(scored_path)
     cand = cand.select("q", "p")
 
-    pred = decide(scored, thr, conf["one_to_one"])
+    pred = decide(scored.select("q", "p", "prob"), thr, conf["one_to_one"])
     ids = pool.select(pl.int_range(pl.len()).cast(pl.Int32).alias("p"), pl.col("entity_id").alias("pid"))
     s1_ids = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), pl.col("entity_id").alias("source1_entity_id"))
     del scored, pool
@@ -112,7 +143,8 @@ def main():
     n_match = sum(len(v) for v in matches.values())
     print(f"[output] threshold={thr:.2f} one_to_one={conf['one_to_one']} | S1 entities={n_q:,} | "
           f"with matches={len(matches):,} ({len(matches) / n_q:.3f}) | total matched ids={n_match:,} "
-          f"({n_match / n_q:.2f}/entity) | total {time.time() - t0:.0f}s")
+          f"({n_match / n_q:.2f}/entity) | candidates={cand.height:,} ({cand.height / n_q:.1f}/entity) "
+          f"| total {time.time() - t0:.0f}s")
     per = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), "country") \
         .join(pred.select("q", pl.col("ids").list.len().alias("n")), on="q", how="left").fill_null(0) \
         .group_by("country").agg(pl.len(), pl.col("n").mean().alias("matches_per_entity"),
