@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import polars as pl
 from unidecode import unidecode
 
-NORM_VERSION = "v3"  # bump when normalisation changes so cached normalised frames are rebuilt
+NORM_VERSION = "v4"  # bump when normalisation changes so cached normalised frames are rebuilt
 
 _RES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
@@ -127,6 +127,11 @@ _NONALNUM_RE = re.compile(r"[^a-z0-9]+")
 _ZERO_RE = re.compile(r"(?<=[a-z])0|0(?=[a-z])")
 _FIVE_RE = re.compile(r"(?<=[a-z])5(?=[a-z])|(?<![a-z0-9])5(?=[a-z]{2})")
 _NUM_RE = re.compile(r"\d+")
+
+
+def _strip0(tok: str) -> str:
+    # Sources 2/3 zero-pad house numbers ("0029 Rue ..." for "29 Rue ..."); 3% of true pairs have one.
+    return (tok.lstrip("0") or "0") if tok.isdigit() else tok
 _COMP_SPLIT_RE = re.compile(r"[,;|]")
 
 
@@ -179,7 +184,7 @@ def norm_name(raw: str, country: str = ""):
 
 def norm_addr(raw: str, country: str):
     """Return (normalised address string, list of numeric tokens)."""
-    nums = _NUM_RE.findall(raw)
+    nums = [_strip0(n) for n in _NUM_RE.findall(raw)]
     s = raw
     if not s.isascii():
         for k, v in INDIC_STATES.items():
@@ -197,7 +202,7 @@ def norm_addr(raw: str, country: str):
         if c in smap:
             out.append(smap[c])
             continue
-        words = (over[t] if t in over else ADDR_ABBR.get(t, t) for t in c.split())
+        words = (over[t] if t in over else ADDR_ABBR.get(t, _strip0(t)) for t in c.split())
         out.append(" ".join(w for w in words if w))
     return " ".join(w for w in out if w), nums
 

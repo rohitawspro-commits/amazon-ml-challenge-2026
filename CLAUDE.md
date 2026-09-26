@@ -79,9 +79,22 @@ rise before the deadline.
 - Leaderboard probes (26 Sep): `submissions/probes/matching_results_noFR.zip` and `_noIN.zip` are v2 with every
   France (or India) row left empty; both pass the validator. Test shares: France 0.150, India 0.4675, US 0.3827;
   predicted empty rates: France 0.057, India 0.062, US 0.059. With LB scores v2 = 0.957, noFR and noIN:
-  France avg F0.5 ~ (0.957 - noFR) / 0.150 + 0.057, India ~ (0.957 - noIN) / 0.4675 + 0.062,
-  US ~ (0.957 - 0.150 * France - 0.4675 * India) / 0.3827 (assumes the public subset has the same country mix;
-  3-decimal scores make the France estimate good to about +-0.005). A weak country is where to spend effort.
+  Probe results (26 Sep, 2:50 PM IST): noFR = 0.829, noIN = 0.573. With India and US at their validation level
+  (0.965) the numbers fit exactly: France ~ 0.91, and the public subset is about France 0.15, India 0.42, US 0.43.
+  So France alone explains the whole validation-to-leaderboard gap. A perfect France would give ~0.970 overall,
+  so 0.98 also needs India + US at ~0.985.
+- France diagnosis (20k-entity sample per country, v2 test candidates and scores). Per S1 entity France has 0.83
+  exact-looking candidates (same core name, street and house number; India 0.42, US 0.60), 0.54 same-name and
+  same-street candidates with a different house number (India 0.15, US 0.62; v2 accepts 19% of them in France
+  against 30-49% elsewhere) and 1.05 same-address candidates with a different name (India 0.40, US 0.62; accepted
+  33% against 50-71%), plus 30-50% more unsure pairs. The record-side second stage is the right tool for this:
+  give a record to the S1 it clearly prefers, drop a record split between two S1s.
+- Normalisation v4 (26 Sep): zero-padded house numbers ("0029" vs "29") were different number tokens. 3.0% of all
+  true training pairs have one (US 4.0%, India 1.5%; 2.9% of France test records), and after stripping the zeros
+  87% of them get an equal first number. Every model must be retrained on v4 features; v2 stays the uploaded
+  baseline and must not be re-run with the new normalisation.
+- Same-name pairs whose S2/S3 address is empty score 0.66-0.67, just under the 0.70 cutoff ("Pornic Danse SARL",
+  "ZV Élémentaire SAS"); 3.3% of records have empty addresses. Check that bucket on validation.
   2. Error analysis before any new feature: on validation, split missed matches into "not in the shortlist",
      "in the shortlist but below the cutoff" and "removed by one-to-one", and wrong matches into "same name,
      different address", "same address, different business" and "other", with ~20 examples each; build features
