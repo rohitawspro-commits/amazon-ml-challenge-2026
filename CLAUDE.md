@@ -71,8 +71,12 @@ rise before the deadline.
 - [ ] Improvements, big levers first. Recall is lost at the model stage (~5% of true pairs) more than at blocking (2.3%).
   1. Reverse blocking: for every S2/S3 record, find its top-5 S1 entities (each record belongs to at most one S1)
      and union them with the forward candidates. Add mutual-best-match features (is this S1 the record's best S1?).
-  2. Cross-source consensus: link S2/S3 copies of the same business to each other (3.46 copies per S1 on average),
-     then use them together, e.g. a second-stage model with "similarity to this entity's most confident match".
+  2. Error analysis before any new feature: on validation, split missed matches into "not in the shortlist",
+     "in the shortlist but below the cutoff" and "removed by one-to-one", and wrong matches into "same name,
+     different address", "same address, different business" and "other", with ~20 examples each; build features
+     for the biggest bucket. Cross-source consensus was checked and dropped: on 30k training entities (110,588 true
+     copies), only 2.2% of copies have name+address token-set similarity < 70 to their S1, and for the hardest
+     0.8% the other copies are no closer than the S1 record (median 58 vs 57), so it could rescue about 1-2% of them.
   3. Better transliteration of native-script words (the learned dictionary covers 92% of native tokens).
   4. Faster runs: cache features, reuse candidates (`--cand-tag`), a bigger machine if the team has AWS credits.
   5. Smaller gains: per-entity expected-F0.5 decision, per-entity sample weights, more training data, ensemble.
