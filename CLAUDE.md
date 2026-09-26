@@ -52,7 +52,11 @@ cd ../../../data/raw/student_resource && python3 utils/validate_submission.py \
 
 ## Status
 
-Working branch: `claude/quirky-cray-iffodx` (merged from `claude/rohit-intro-lwmrmr`).
+Working branch: `claude/awesome-sagan-i0eq70`, a fast-forward of `claude/quirky-cray-iffodx` (which stays as the
+teammates' base). 26 Sep 16:45 UTC: Rohit's chat that held the v4rev run was deleted together with its container,
+so the running job, the data and every cache were lost. The run was restarted here from scratch: install, download,
+unzip, then `train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08` (~7 h on 4 cores), followed by
+`predict.py --tag v4rev`, the validator and `./package.sh SJCM`.
 The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
 
 Leaderboard on 26 Sep, 11:55 AM IST: 1st 0.9906, 6th 0.988, 50th 0.985 (only the top 50 reach the results).
