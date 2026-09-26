@@ -125,3 +125,55 @@ Goal hai inhe 10–15 tak laana, aur sahi matches 0.1% se zyada nahi khone.
 - **27 Sep subah:** sab jod ke final model train karna.
 - **27 Sep dopahar 3 baje tak:** AWS pe final test run shuru karna.
 - **27 Sep raat 9 baje tak:** Unstop pe upload aur zip submit. Deadline raat 11:59 baje hai.
+
+## 8. Har kisi ka AI prompt (copy-paste)
+
+Apne AI (Claude, ChatGPT, Gemini) mein apna prompt paste karo. Agar AI repo nahi padh sakta, to is file ka text bhi
+saath mein paste kar do.
+
+### Shreyash, prompt 1: error analysis
+
+Kaggle notebook ko shuru se hi **GPU T4 x2** pe rakho (4 CPU cores, ~29 GB RAM). Isse cross-encoder ke waqt session
+restart nahi karna padega.
+
+```
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle notebook with GPU T4 x2 (4 CPU cores, ~29 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
+My job is the error analysis of our current model v2 (validation macro F0.5 0.965, precision 0.984, recall 0.927).
+1. Write notebook cells that clone the repo into /tmp using the token, check out the branch, run pip install gdown -r code/business_entity_resolution/requirements.txt, download the data with gdown --folder "https://drive.google.com/drive/folders/1bcJiltepYMEGJ_A54fFM4u_LQmPbzjBt" -O data/raw/gdrive, and unzip it inside data/raw.
+2. Run: cd code/business_entity_resolution/src && python3 train.py --tag ea --n-train 200000 --n-val 50000, then python3 error_analysis.py --tag ea --n 25 > /kaggle/working/ea_report.txt.
+3. Sort the validation errors into buckets. Missed matches: not in the shortlist / in the shortlist but below the cutoff / removed by the one-to-one rule. Wrong matches: same name different address / same address different business / other. Give counts and 5 examples per bucket, and write a short summary I can send to my team.
+```
+
+### Shreyash, prompt 2: cross-encoder (hybrid), error analysis ke baad
+
+```
+Next step after the error analysis (the plan is in CLAUDE.md under "Hybrid"). In the same Kaggle notebook (GPU T4 x2), build a cross-encoder re-ranker:
+1. From the labelled candidate pairs of the train.py --tag ea run (data/work), build a training set: mostly pairs whose LightGBM probability is between 0.02 and 0.98, plus a sample of confident ones. Text per side: "name: <core> | address: <naddr>" from the normalised frames.
+2. Fine-tune cross-encoder/ms-marco-MiniLM-L-6-v2 (Apache-2.0) with sentence-transformers CrossEncoder as a binary classifier: max_length 96, 1-2 epochs, lr 2e-5. Keep the validation entities out of training.
+3. On validation, score the unsure pairs, blend p = (1 - w) * p_lgb + w * p_ce, and pick w and the cutoff that keep precision >= 0.984. Report macro F0.5, precision and recall against LightGBM alone.
+4. Save the model in fp16, put the scoring code in src/hybrid.py, and push both to the branch shreyash/hybrid (weights with git add -f). Write the result in CLAUDE.md.
+```
+
+### Aryan: pruning
+
+Kaggle notebook: Accelerator None (CPU), Internet On.
+
+```
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle CPU notebook (4 cores, ~30 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
+My job is a candidate-pruning stage. The organisers now rank teams partly on the size of candidate_pairs.tsv (smaller is better). Our blocking gives 52.8 candidates per Source-1 entity and finds 97.7% of true matches. Goal: keep only 10-15 candidates per entity while losing at most 0.1% of the true matches.
+1. Write notebook cells that clone the repo into /tmp using the token, check out the branch, install the requirements and download the data (same commands as TEAM_SETUP.md section 3).
+2. Run: cd code/business_entity_resolution/src && python3 train.py --tag pr --n-train 200000 --n-val 50000 --block-only. This caches the candidates with their per-channel blocking scores in data/work/.
+3. Train a small model (LightGBM on blocking scores only: each channel's cosine and rank, and how many channels found the pair) that ranks each entity's candidates. Report how many true matches are kept at top-k for k = 5, 10, 15, 20, 30 on held-out entities.
+4. Put the pruning in a new file src/prune.py (a function that takes the candidate frame and returns the pruned one), push it to a branch aryan/pruning, and add the k-vs-recall table to CLAUDE.md. Do not edit train.py or predict.py; Rohit's chat will wire it in.
+```
+
+### Arvind: AWS
+
+```
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md section 5 and CLAUDE.md have the context). I have an AWS account with $117 in credits and a GitHub token.
+My job is to run the heavy jobs on a big EC2 machine.
+1. Guide me to check my EC2 quota "Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances" and request 32 vCPUs if it is lower. Then launch a c6i.8xlarge (or c6i.4xlarge if the quota is lower) in ap-south-1 with Ubuntu 24.04, 100 GB gp3 and SSH only from my IP.
+2. Set up Python in a venv, clone the repo with my token, check out the branch, install the requirements and download the data (TEAM_SETUP.md section 3). Use tmux for every long run.
+3. Run the bigger-training experiment: cd code/business_entity_resolution/src && python3 train.py --tag big --n-train 500000 --n-val 50000, and compare its validation macro F0.5 with v2 (0.9654). Push models/lgb_big.txt and models/config_big.json with git add -f (models/ is git-ignored) to a branch arvind/big-train, and write the result in CLAUDE.md.
+4. Keep the machine ready for the final test run (python3 predict.py --tag <final tag>), then run the validator, build the zip with ./package.sh SJCM, and help me download it with scp. Remind me to stop the instance whenever nothing is running.
+```
