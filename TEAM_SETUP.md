@@ -17,7 +17,7 @@ Deadline: **27 Sep, 11:59 PM IST**. Poora context `CLAUDE.md` mein hai.
 | Kaun | Machine | Kaam |
 | --- | --- | --- |
 | Rohit | Claude chat | Ulta search (reverse blocking) aur mutual-best features; sabki branches merge karna |
-| Shreyash | Kaggle | v2 ki galtiyon ki analysis |
+| Shreyash | Kaggle | v2 ki galtiyon ki analysis, phir hybrid ka cross-encoder (Kaggle GPU pe) |
 | Aryan | Kaggle | Candidates kam karne wala pruning step |
 | Arvind | AWS | Zyada training data wala experiment, phir final test run aur zip |
 
@@ -120,7 +120,7 @@ Goal hai inhe 10–15 tak laana, aur sahi matches 0.1% se zyada nahi khone.
 
 ## 7. Timeline
 
-- **Aaj raat tak:** Shreyash ki error report, Aryan ki k vs recall table, Arvind ka AWS setup aur big-data
+- **Aaj raat tak:** Shreyash ki error report aur cross-encoder ka validation result (`CLAUDE.md` mein "Hybrid"), Aryan ki k vs recall table, Arvind ka AWS setup aur big-data
   result, Rohit ki chat ka reverse blocking result.
 - **27 Sep subah:** sab jod ke final model train karna.
 - **27 Sep dopahar 3 baje tak:** AWS pe final test run shuru karna.
