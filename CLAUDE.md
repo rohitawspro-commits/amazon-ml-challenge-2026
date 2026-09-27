@@ -75,7 +75,7 @@ blocking 2 h 51 min, features + scoring 2 h 2 min): 91,520,833 candidates (52.8/
 entities with matches (94.1 %), 3.24 matched records per entity (France 3.19, India 3.22, US 3.28; predicted singletons
 5.6-6.1 %). Both outputs pass `validate_submission.py --check-ids`. `SJCM_submission.zip` (545 MB) was built at 16:15 IST
 and sent to Rohit as 18 parts of 29 MiB; `submissions/v4/matching_results.zip` (41 MB) is on GitHub for the leaderboard
-upload. The uncertain test pairs (LightGBM prob 0.02-0.98, with texts) are exported to
+upload. **v4 uploaded 27 Sep 5:19 PM IST: public leaderboard 0.959** (v2 0.957). The uncertain test pairs (LightGBM prob 0.02-0.98, with texts) are exported to
 `submissions/v4/uncertain_test_pairs_*.parquet` for the cross-encoder path (TEAM_SETUP.md prompt 3), which the team did
 not pursue in the end. Error analysis (`ea_report_v4.txt` in the scratchpad, examples now in `Documentation_template.md`):
 false positives are near-identical distractors at the same address (other legal form, one-letter name edit), false
@@ -186,6 +186,7 @@ rise before the deadline.
       positive/negative examples, test candidate counts and run statistics).
 - [x] `./package.sh SJCM` with the v4 outputs (545 MB zip; `candidate_pairs.tsv` is 1.2 GB), sent to Rohit as 18 parts of
   29 MiB (`split -b 29m`); join with `cat SJCM_submission.zip.part-* > SJCM_submission.zip`. Upload to Unstop is Rohit's
-  step (matching_results.tsv for the leaderboard, the zip as the final submission).
+  step: matching_results uploaded and scored 0.959 (27 Sep 5:19 PM IST); the final package zip still has to be submitted
+  wherever Unstop collects it (not the matching-results box; check the competition page / announcements).
 
 Update this section and push after every step.
