@@ -52,11 +52,20 @@ cd ../../../data/raw/student_resource && python3 utils/validate_submission.py \
 
 ## Status
 
-Working branch: `claude/awesome-sagan-i0eq70`, a fast-forward of `claude/quirky-cray-iffodx` (which stays as the
-teammates' base). 26 Sep 16:45 UTC: Rohit's chat that held the v4rev run was deleted together with its container,
-so the running job, the data and every cache were lost. The run was restarted here from scratch: install, download,
-unzip, then `train.py --tag v4rev --rev-top-n 5 --rev-depth 2 --folds 4 --lr 0.08` (~7 h on 4 cores), followed by
-`predict.py --tag v4rev`, the validator and `./package.sh SJCM`.
+Working branch: `claude/jolly-turing-655hzw`, a fast-forward of `claude/awesome-sagan-i0eq70` (itself a fast-forward
+of `claude/quirky-cray-iffodx`, the teammates' base). 27 Sep 09:00 IST: the chat that held the restarted v4rev run was
+lost again with its container (job, data, caches), and `models/config_v4rev.json` was never committed, so v4rev has no
+result. On this 4-core box the v4rev training (~7 h) plus its test run (~10 h: reverse blocking doubles the blocking
+time) no longer fits before the deadline, so the final run here is **v4** = v4 normalisation + forward blocking (the v2
+channels) + stage 1 (4 folds, out-of-fold) + stage 2 from the record's side, without reverse blocking:
+`train.py --tag v4 --n-train 200000 --n-val 50000 --folds 4 --lr 0.08` (started 09:18 IST, ~2 h), then
+`predict.py --tag v4` (~7 h), the validator and `./package.sh SJCM`, chained in one detached script (`run.sh` in this
+session's scratchpad; logs `train_v4.log`, `predict_v4.log`, `run.log` next to it). The model, config and the zipped
+test predictions are committed as soon as they exist. train.py now keeps stage 2 only if it beats stage 1 on
+validation (`config_v4.json` records `stage2_val` either way); when stage 2 is used, `predict.py --from-scores
+--use-stage1` also writes the stage-1 decision as `submissions/v4/matching_results_stage1.zip`, so both can be
+compared on the public leaderboard (the record-side probability margins are not test-consistent, see below).
+If Arvind's 32-core AWS box is up, the v4rev commands above are the better use of it.
 The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
 
 Leaderboard on 26 Sep, 11:55 AM IST: 1st 0.9906, 6th 0.988, 50th 0.985 (only the top 50 reach the results).
