@@ -1,0 +1,71 @@
+{
+ "channels": [
+  {
+   "name": "w",
+   "col": "both",
+   "analyzer": "word",
+   "ngram": [
+    1,
+    1
+   ],
+   "max_df": 0.02,
+   "top_n": 40,
+   "thr": 0.05
+  },
+  {
+   "name": "n3",
+   "col": "core",
+   "analyzer": "char_wb",
+   "ngram": [
+    3,
+    3
+   ],
+   "max_df": 0.01,
+   "top_n": 10,
+   "thr": 0.1
+  },
+  {
+   "name": "a4",
+   "col": "naddr",
+   "analyzer": "char_wb",
+   "ngram": [
+    4,
+    4
+   ],
+   "max_df": 0.01,
+   "top_n": 15,
+   "thr": 0.1
+  }
+ ],
+ "sample": {
+  "n_train": 200000,
+  "n_val": 50000,
+  "seed": 42
+ },
+ "report": {
+  "all": {
+   "queries": 250000,
+   "truth_pairs": 863499,
+   "forward": {
+    "recall": 0.9777509875518096,
+    "cand_per_query": 53.058348
+   }
+  },
+  "train": {
+   "queries": 200000,
+   "truth_pairs": 690876,
+   "forward": {
+    "recall": 0.9777977524186685,
+    "cand_per_query": 53.05313
+   }
+  },
+  "val": {
+   "queries": 50000,
+   "truth_pairs": 172623,
+   "forward": {
+    "recall": 0.9775638240558906,
+    "cand_per_query": 53.07922
+   }
+  }
+ }
+}
