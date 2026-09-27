@@ -67,6 +67,14 @@ validation (`config_v4.json` records `stage2_val` either way); when stage 2 is u
 compared on the public leaderboard (the record-side probability margins are not test-consistent, see below).
 If Arvind's 32-core AWS box is up, the v4rev commands above are the better use of it.
 The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
+v4 result (27 Sep 11:05 IST, training 1 h 47 min): blocking recall 0.9778 at 53.1 cand/query; stage 1 val
+macro-F0.5 **0.9677** (P 0.9846, R 0.9329, thr 0.68, one-to-one; India 0.9615, US 0.9719; v2 was 0.9654); stage 2
+0.9674 at the precision floor (0.9681 unconstrained), so it is not used and `config_v4.json` holds stage 1 only.
+Model pushed (`models/lgb_v4.txt`, `config_v4.json`, `blocking_v4.json`). `predict.py --tag v4` started 11:08 IST
+(ETA ~18:15 IST), then the validator and `./package.sh SJCM`; the zipped `matching_results.tsv` goes to
+`submissions/v4/`. Error analysis (`ea_report_v4.txt` in the scratchpad, examples now in `Documentation_template.md`):
+false positives are near-identical distractors at the same address (other legal form, one-letter name edit), false
+negatives are records with an empty address and a name fragment, or a replaced name at the same address.
 
 Leaderboard on 26 Sep, 11:55 AM IST: 1st 0.9906, 6th 0.988, 50th 0.985 (only the top 50 reach the results).
 Our v2 scores 0.957 on the public leaderboard (validation 0.965), so we need about +3 points, and the cutoff will

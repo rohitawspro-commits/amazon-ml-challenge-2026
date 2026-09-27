@@ -2,16 +2,17 @@
 
 **Team Name:** SJCM
 **Team Members:** Rohit, Shreyash Patil, Aryan, Arvind Prajapati
-**Submission Date:** 26 September 2026
+**Submission Date:** 27 September 2026
 
 ---
 
 ## 1. Executive Summary
 
 We treat the task as *retrieve-then-classify* entity resolution. For every Source-1 entity we
-retrieve a small candidate set from Source 2 + Source 3 with two complementary character-n-gram
-TF-IDF channels (business name and address), score every (Source-1, candidate) pair with a
-LightGBM classifier over ~60 string-similarity and context features, and turn the scores into
+retrieve a small candidate set from Source 2 + Source 3 with three complementary TF-IDF channels
+(word tokens of name + address, character n-grams of the name, character n-grams of the address),
+score every (Source-1, candidate) pair with a LightGBM classifier over 72 string-similarity and
+context features, and turn the scores into
 matches with a precision-oriented threshold tuned for macro F0.5 plus a one-to-one assignment
 constraint that exploits the fact that Source 1 is deduplicated. The pipeline is CPU-only,
 uses no external data, and is country-agnostic (France, unseen in training, is handled by the
@@ -67,7 +68,9 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   `0`->`o` / `5`->`s` inside words. Addresses: transliterated, native-script state names mapped to
   English, per-country state abbreviations expanded (`NC` -> `north carolina`,
   `KA` -> `karnataka`; unseen countries such as France simply skip this table), street
-  abbreviations expanded (`st` -> `street`, `rd` -> `road`, …), numeric tokens extracted.
+  abbreviations expanded (`st` -> `street`, `rd` -> `road`, …), numeric tokens extracted with their
+  leading zeros stripped (`0029` and `29` are the same house number; 3 % of the true training pairs
+  differ only in such padding).
 * **Learned noise words.** Sources 2/3 decorate names with extra words that Source 1 does not
   carry (`Holdings`, `Uptown`, `Overseas`, `Participations`, `Groupe`, honorifics `Mr`/`Smt` …).
   For every country we compare, without any labels, the document frequency of each name token
@@ -103,8 +106,8 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   (5 entities get no candidate). Against all 1.73M × 9.97M Source-1 × Source-2/3 pairs the reduction ratio is
   1 − 91.6M / 1.73e13 ≈ 0.999995.
 * **How you ensured true matches were not lost:** blocking recall is measured on a 250k-entity
-  training sample against the *full* 10.3M-record training pool: **0.977** pair recall overall
-  (word channel alone 0.972, name char channel 0.424, address char channel 0.813), with 53
+  training sample against the *full* 10.3M-record training pool: **0.978** pair recall overall
+  (word channel alone 0.973, name char channel 0.424, address char channel 0.817), with 53.1
   candidates per Source-1 entity on average. On a 20k-query Indian development sample (before the transliteration
   dictionary) the word channel alone reached 0.919 pair recall at top-25 and the three-channel
   union 0.931; a single character-3-gram name channel, the textbook choice, reached only 0.52
@@ -133,34 +136,70 @@ of the same Source-1 entity) that let the classifier make relative decisions.
   score.
 
 **Model type:** LightGBM binary classifier (gradient-boosted trees, MIT licence; 127 leaves,
-learning-rate 0.05, up to 3,000 rounds, early-stopped on validation log-loss; ~37 MB model file). Trained on 10.6M candidate
-pairs from 200k randomly sampled Source-1 training entities blocked against the full 10.3M-record
-training pool (positives = pairs present in the ground truth).
+learning-rate 0.08, up to 3,000 rounds, early-stopped on validation log-loss after 1,363 rounds; ~19 MB
+model file). Trained on 10.6M candidate pairs from 200k randomly sampled Source-1 training entities blocked
+against the full 10.3M-record training pool (positives = pairs present in the ground truth).
 
-**Threshold selection method:** grid search of the probability threshold (0.20–0.95, step 0.02) on a
+**Record-side second stage (evaluated, not used).** Every Source-2/3 record belongs to at most one Source-1
+entity, so we also trained a second LightGBM from the record's side: the stage-1 probabilities are produced
+out-of-fold (4 folds over the training entities) and every pair is re-scored with the record's best and
+second-best stage-1 probability, its margin over the record's strongest other entity, the same quantities from
+the entity's side, and a few pair features. On validation it reached macro F0.5 0.9674 against 0.9677 for the
+pairwise model at the same precision floor, so the submitted decision stays pairwise (the pairwise model is the
+same whether or not the second stage is trained; `train.py` keeps the second stage only when it wins).
+
+**Threshold selection method:** grid search of the probability threshold (0.10–0.95, step 0.01) on a
 held-out validation split of 50k Source-1 entities, maximising **macro F0.5 computed exactly as the
-leaderboard does** (singletons included). Two decision rules were compared: plain thresholding and
-threshold + one-to-one assignment (each Source-2/3 record is given only to the Source-1 entity with
-the highest probability). Selected: threshold **0.70** with one-to-one assignment (the sweep is flat between 0.62 and 0.78).
+leaderboard does** (singletons included) among the thresholds whose macro precision is at least 0.984, so
+that the precision-weighted metric stays stable on the unseen country. Two decision rules were compared: plain
+thresholding and threshold + one-to-one assignment (each Source-2/3 record is given only to the Source-1 entity
+with the highest probability). Selected: threshold **0.68** with one-to-one assignment (the sweep is flat
+between 0.66 and 0.71).
 
 ---
 
 ## 5. Results & Error Analysis
 
-* **F_0.5 Score (macro):** **0.9654** on the 50k-entity validation split (macro precision 0.984,
-  macro recall 0.927, singleton accuracy 0.954; pair-level precision 0.989, pair-level recall 0.927).
-  LightGBM validation log-loss 0.0101 (learning-rate 0.05, 127 leaves, early stopping on the
-  validation split). An earlier variant without the learned noise words and IDF-weighted cosines
-  scored 0.9660 — i.e. the two are within noise of each other; the final model keeps the extra
-  features because they make the pipeline more robust on the unseen French records.
-* **Common false positives (wrong merges):** TBD_FP
-* **Common false negatives (missed matches):** TBD_FN
+* **F_0.5 Score (macro):** **0.9677** on the 50k-entity validation split (macro precision 0.985,
+  macro recall 0.933, singleton accuracy 0.957; pair-level precision 0.989, pair-level recall 0.933);
+  India 0.9615, US 0.9719. LightGBM validation log-loss 0.0098. Earlier versions: v1 0.9660 (without the
+  learned noise words and IDF cosines), v2 0.9654 (public leaderboard 0.957). Leaderboard probes of v2 with
+  every French (or every Indian) prediction left empty showed that India and US score at their validation
+  level while France is at about 0.91, so the unseen country is where the remaining gap sits. The final
+  version adds the house-number normalisation (+0.2 points on validation) and the precision-floor tuning.
+* **Common false positives (wrong merges):** on the validation split 1,776 of the ~163k pairs above the
+  threshold are not in the ground truth. Nearly all are records that look like a copy of the entity but
+  belong to a different, near-identical business at the same address:
+  * same core name and address, different legal form: `Sams (India) Foods Corp` vs `Sams (India) Foods L.L.P.`,
+    `Metro Services (India) Ltd` vs `Metro Services (India) LLP`, `Yamuna Ventures` vs `YAMUNA VENTURES LLP`
+    (our normalisation strips the legal form, so both sides become identical);
+  * a one-letter or one-token edit that the typo-tolerant features forgive: `Eadith Phelps, DDS` vs
+    `Eadith Pohelps, LDDS`, `Blue Trust III L.L.C.` vs `Blue Tust IIII L.L.C.`, `Summit Alliance II` vs
+    `Summit Alliance Mii` (3164 vs 164 Hillsboro Pike);
+  * a shortened or extended name at the same address: `Premier Shyam Software Limited` vs `Shyam`,
+    `Al Food LLP` vs `AL`, `Future Info Private Limited` vs `Future (india) Private Limited`.
+  A legal-form-conflict feature (both sides carry a legal form and they differ) and a stricter treatment of a
+  changed house number are the obvious next features.
+* **Common false negatives (missed matches):** 7,773 true pairs are in the shortlist but score below the
+  threshold (4.5 % of the validation truth pairs), and blocking never retrieves another 2.2 %. Buckets:
+  * an empty address and a name cut down to a fragment plus a filler word: `J+ Airport, Inc` vs
+    `J+ INC PARTNERS`, `Grace Fellowship` vs `Grace Partners`, `Corner Book Store` vs `Corner Book & Co`,
+    `Keystone Unified Integrated LLC` vs `Keystone Unified Enterprises` (3.3 % of records have an empty
+    address; a generic name fragment alone cannot be told apart from another business);
+  * a replaced name at (almost) the same address: `Atlas Optics LLC` vs `AVIARCBELO (ID: 50143)`,
+    `Royal Impex Private Limited` vs `M/s Tavosol (ID: 32865)`, `Behavioral Health Physicians Inc` vs
+    `K0rgildnex` (265 vs 264 Carlyle Lake Dr): only the address links them, and for a precision-weighted
+    metric the address alone is not enough evidence;
+  * both fields damaged: `South Health Center` vs `South  Center Service` at 887 vs 87 Eichele Road with the
+    city replaced by a neighbouring one.
+  These are the pairs the record-side second stage was meant for; on validation it did not beat the pairwise
+  model, so they remain the main open error class.
 
 ---
 
 ## 6. Conclusion
 
-A carefully normalised, two-channel TF-IDF blocking stage combined with a feature-rich gradient
+A carefully normalised, three-channel TF-IDF blocking stage combined with a feature-rich gradient
 boosting matcher and a precision-tuned, one-to-one decision rule gives a strong, fully reproducible
 CPU-only solution. The biggest lessons: (1) address retrieval is essential because a large share of
 name fields are transliterated, truncated or rewritten as domains; (2) context features and the
