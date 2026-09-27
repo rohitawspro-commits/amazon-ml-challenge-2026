@@ -1,0 +1,4 @@
+# The pipeline's dependencies are pinned next to the code; this file only forwards to them
+# (so `pip install -r requirements.txt` from the repo root works too) and adds the data downloader.
+-r code/business_entity_resolution/requirements.txt
+gdown

@@ -27,7 +27,7 @@ Transliteration pe kaam nahi karna: sabse mushkil copies mein sirf 1.9% naam non
 ```bash
 git clone https://<github-username>:<TOKEN>@github.com/rohitawspro-commits/amazon-ml-challenge-2026.git
 cd amazon-ml-challenge-2026
-git checkout claude/quirky-cray-iffodx
+git checkout claude/jolly-turing-655hzw
 git checkout -b <naam>/<kaam>            # jaise shreyash/error-analysis
 pip install gdown -r code/business_entity_resolution/requirements.txt
 gdown --folder "https://drive.google.com/drive/folders/1bcJiltepYMEGJ_A54fFM4u_LQmPbzjBt" -O data/raw/gdrive
@@ -35,6 +35,11 @@ cd data/raw && unzip -q gdrive/*_student_resource.zip && rm -rf gdrive __MACOSX 
 ```
 
 Machine mein kam se kam 16 GB RAM chahiye (training lagbhag 12 GB leti hai).
+
+**requirements.txt:** asli pins `code/business_entity_resolution/requirements.txt` mein hain (polars, numpy 2.x,
+lightgbm 4.7, sparse_dot_topn, rapidfuzz ...). Root wali file pehle khali thi, ab wo isi ko forward karti hai.
+`numpy<2` pin mat lagana, hamare pins numpy 2.x ke liye hain. Cross-encoder ke liye upar se `sentence-transformers`
+install karo, torch ko haath mat lagana (Kaggle ka CUDA wala torch rehne do).
 
 ## 4. Kaggle (Aryan, Shreyash)
 
@@ -135,7 +140,7 @@ Kaggle notebook ko shuru se hi **GPU T4 x2** pe rakho (4 CPU cores, ~29 GB RAM).
 restart nahi karna padega.
 
 ```
-I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle notebook with GPU T4 x2 (4 CPU cores, ~29 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/jolly-turing-655hzw (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle notebook with GPU T4 x2 (4 CPU cores, ~29 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
 My job is the error analysis of our current model v2 (validation macro F0.5 0.965, precision 0.984, recall 0.927).
 1. Write notebook cells that clone the repo into /tmp using the token, check out the branch, run pip install gdown -r code/business_entity_resolution/requirements.txt, download the data with gdown --folder "https://drive.google.com/drive/folders/1bcJiltepYMEGJ_A54fFM4u_LQmPbzjBt" -O data/raw/gdrive, and unzip it inside data/raw.
 2. Run: cd code/business_entity_resolution/src && python3 train.py --tag ea --n-train 200000 --n-val 50000, then python3 error_analysis.py --tag ea --n 25 > /kaggle/working/ea_report.txt.
@@ -157,7 +162,7 @@ Next step after the error analysis (the plan is in CLAUDE.md under "Hybrid"). In
 Kaggle notebook: Accelerator None (CPU), Internet On.
 
 ```
-I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle CPU notebook (4 cores, ~30 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/jolly-turing-655hzw (TEAM_SETUP.md and CLAUDE.md there have the context). I'm in a Kaggle CPU notebook (4 cores, ~30 GB RAM, internet on) and my GitHub token is in Kaggle Secrets as GITHUB_TOKEN.
 My job is a candidate-pruning stage. The organisers now rank teams partly on the size of candidate_pairs.tsv (smaller is better). Our blocking gives 52.8 candidates per Source-1 entity and finds 97.7% of true matches. Goal: keep only 10-15 candidates per entity while losing at most 0.1% of the true matches.
 1. Write notebook cells that clone the repo into /tmp using the token, check out the branch, install the requirements and download the data (same commands as TEAM_SETUP.md section 3).
 2. Run: cd code/business_entity_resolution/src && python3 train.py --tag pr --n-train 200000 --n-val 50000 --block-only. This caches the candidates with their per-channel blocking scores in data/work/.
@@ -168,10 +173,47 @@ My job is a candidate-pruning stage. The organisers now rank teams partly on the
 ### Arvind: AWS
 
 ```
-I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/quirky-cray-iffodx (TEAM_SETUP.md section 5 and CLAUDE.md have the context). I have an AWS account with $117 in credits and a GitHub token.
+I'm on team SJCM in the Amazon ML Challenge 2026 (business entity resolution). Our code is in the GitHub repo rohitawspro-commits/amazon-ml-challenge-2026, branch claude/jolly-turing-655hzw (TEAM_SETUP.md section 5 and CLAUDE.md have the context). I have an AWS account with $117 in credits and a GitHub token.
 My job is to run the heavy jobs on a big EC2 machine.
 1. Guide me to check my EC2 quota "Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances" and request 32 vCPUs if it is lower. Then launch a c6i.8xlarge (or c6i.4xlarge if the quota is lower) in ap-south-1 with Ubuntu 24.04, 100 GB gp3 and SSH only from my IP.
 2. Set up Python in a venv, clone the repo with my token, check out the branch, install the requirements and download the data (TEAM_SETUP.md section 3). Use tmux for every long run.
 3. Run the bigger-training experiment: cd code/business_entity_resolution/src && python3 train.py --tag big --n-train 500000 --n-val 50000, and compare its validation macro F0.5 with v2 (0.9654). Push models/lgb_big.txt and models/config_big.json with git add -f (models/ is git-ignored) to a branch arvind/big-train, and write the result in CLAUDE.md.
 4. Keep the machine ready for the final test run (python3 predict.py --tag <final tag>), then run the validator, build the zip with ./package.sh SJCM, and help me download it with scp. Remind me to stop the instance whenever nothing is running.
 ```
+
+### Shreyash, prompt 3: test ke unsure pairs ko cross-encoder se score karna (Cell 10 ke baad, usi notebook mein)
+
+Rohit ki chat v4 ke test scores mein se unsure pairs (LightGBM prob 0.02 se 0.98) unke normalised text ke saath
+`submissions/v4/uncertain_test_pairs_*.parquet` mein push karegi (27 Sep ~18:30 IST, branch `claude/jolly-turing-655hzw`).
+Cell 10 ke baad ye cell chalao (`ce_model`, `BEST_W`, `BEST_THR`, `LO`, `HI`, `BEST_F`, `BEST_P`, `BEST_R` Cell 10 se aate hain),
+phir Rohit ko batao ki branch `shreyash/hybrid` ready hai:
+
+```python
+# Cell 13 — score the uncertain TEST pairs with the fine-tuned cross-encoder and push the probabilities
+import glob, json, os, subprocess, numpy as np, polars as pl, torch
+os.chdir("/tmp/amazon-ml-challenge-2026")
+subprocess.run(["git", "fetch", "origin", "claude/jolly-turing-655hzw"], check=True)
+subprocess.run(["git", "checkout", "FETCH_HEAD", "--", "submissions/v4"], check=True)
+parts = sorted(glob.glob("submissions/v4/uncertain_test_pairs_*.parquet"))
+unc = pl.concat([pl.read_parquet(p) for p in parts])   # q, p, s1_id, p_id, prob, text_a, text_b
+print(f"{unc.height:,} uncertain test pairs from {len(parts)} files")
+with torch.no_grad():
+    logits = ce_model.predict(list(zip(unc["text_a"].to_list(), unc["text_b"].to_list())),
+                              batch_size=512, show_progress_bar=True, convert_to_numpy=True)
+ce_prob = (1.0 / (1.0 + np.exp(-logits.astype(np.float64)))).astype(np.float32)
+os.makedirs("submissions/hybrid", exist_ok=True)
+unc.select("s1_id", "p_id", "prob").with_columns(ce_prob=pl.Series(ce_prob)) \
+   .write_parquet("submissions/hybrid/ce_test_probs.parquet", compression="zstd")
+json.dump({"w": float(BEST_W), "thr": float(BEST_THR), "lo": LO, "hi": HI,
+           "val_f05": float(BEST_F), "val_prec": float(BEST_P), "val_rec": float(BEST_R)},
+          open("submissions/hybrid/hybrid_params.json", "w"), indent=1)
+for args in (["checkout", "-B", "shreyash/hybrid"], ["add", "-f", "submissions/hybrid"],
+             ["commit", "-m", "Cross-encoder probabilities for the uncertain v4 test pairs"],
+             ["push", "-u", "origin", "shreyash/hybrid", "--force"]):
+    print(subprocess.run(["git", *args], capture_output=True, text=True))
+```
+
+Rohit ki chat phir `blend.py` se v4 ke scores mein blend karegi (p = (1 - w) * p_lgb + w * p_ce, sirf unsure pairs pe),
+`predict.py --tag v4h --from-scores --cand-tag v4` se output likhegi, validator aur zip banayegi. Hybrid tabhi use hoga
+jab validation pe wo v4 (0.9677) se better ho, precision >= 0.984 ke saath. Cell 11 (fp16 model + `hybrid.py` push)
+bhi chala do, par test scoring ke liye Cell 13 kaafi hai.
