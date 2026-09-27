@@ -70,9 +70,14 @@ The repo default branch `arvind/ml-pipeline` holds only an empty skeleton.
 v4 result (27 Sep 11:05 IST, training 1 h 47 min): blocking recall 0.9778 at 53.1 cand/query; stage 1 val
 macro-F0.5 **0.9677** (P 0.9846, R 0.9329, thr 0.68, one-to-one; India 0.9615, US 0.9719; v2 was 0.9654); stage 2
 0.9674 at the precision floor (0.9681 unconstrained), so it is not used and `config_v4.json` holds stage 1 only.
-Model pushed (`models/lgb_v4.txt`, `config_v4.json`, `blocking_v4.json`). `predict.py --tag v4` started 11:08 IST
-(ETA ~18:15 IST), then the validator and `./package.sh SJCM`; the zipped `matching_results.tsv` goes to
-`submissions/v4/`. Error analysis (`ea_report_v4.txt` in the scratchpad, examples now in `Documentation_template.md`):
+Model pushed (`models/lgb_v4.txt`, `config_v4.json`, `blocking_v4.json`). `predict.py --tag v4` ran 11:08-16:06 IST (4 h 58 min:
+blocking 2 h 51 min, features + scoring 2 h 2 min): 91,520,833 candidates (52.8/entity, 7 entities without), 1,629,480
+entities with matches (94.1 %), 3.24 matched records per entity (France 3.19, India 3.22, US 3.28; predicted singletons
+5.6-6.1 %). Both outputs pass `validate_submission.py --check-ids`. `SJCM_submission.zip` (545 MB) was built at 16:15 IST
+and sent to Rohit as 18 parts of 29 MiB; `submissions/v4/matching_results.zip` (41 MB) is on GitHub for the leaderboard
+upload. The uncertain test pairs (LightGBM prob 0.02-0.98, with texts) are exported to
+`submissions/v4/uncertain_test_pairs_*.parquet` for the cross-encoder path (TEAM_SETUP.md prompt 3), which the team did
+not pursue in the end. Error analysis (`ea_report_v4.txt` in the scratchpad, examples now in `Documentation_template.md`):
 false positives are near-identical distractors at the same address (other legal form, one-letter name edit), false
 negatives are records with an empty address and a name fragment, or a replaced name at the same address.
 
@@ -177,10 +182,10 @@ rise before the deadline.
   the final ranking. Reverse blocking adds candidates, so keep its depth small, and add a cheap pruning stage (e.g. a
   small model on the blocking scores) before the full features so the final candidate set shrinks. Fewer candidates
   also cut the ~4 h feature time.
-- [ ] Documentation: only the false positive/negative examples are left (they need validation predictions). Team name,
-      test candidate counts and the test-run statistics are filled in for v2; update them if the final model changes.
-- [ ] `./package.sh SJCM` with the final outputs. `candidate_pairs.tsv` is 1.2 GB, so the zip is far above the 30 MiB
-      chat limit and GitHub's 100 MB file limit. Send it to the user in parts under 30 MiB (`split -b 29m`) and have
-      them join the parts with `cat SJCM_submission.zip.part-* > SJCM_submission.zip`.
+- [x] Documentation: filled in for v4 (validation results, threshold method, second-stage experiment, false
+      positive/negative examples, test candidate counts and run statistics).
+- [x] `./package.sh SJCM` with the v4 outputs (545 MB zip; `candidate_pairs.tsv` is 1.2 GB), sent to Rohit as 18 parts of
+  29 MiB (`split -b 29m`); join with `cat SJCM_submission.zip.part-* > SJCM_submission.zip`. Upload to Unstop is Rohit's
+  step (matching_results.tsv for the leaderboard, the zip as the final submission).
 
 Update this section and push after every step.
