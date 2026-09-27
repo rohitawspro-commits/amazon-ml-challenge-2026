@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--threshold", type=float, default=None, help="override tuned threshold")
     ap.add_argument("--from-scores", action="store_true",
                     help="reuse the cached test scores of this tag and only rerun the decision and the output writing")
+    ap.add_argument("--use-stage1", action="store_true",
+                    help="decide from the stage-1 probabilities and their tuned threshold even when stage 2 ran")
     args = ap.parse_args()
     t0 = time.time()
     n_cpu = os.cpu_count()
@@ -119,7 +121,14 @@ def main():
         scored.write_parquet(scored_path)
     cand = cand.select("q", "p")
 
-    pred = decide(scored.select("q", "p", "prob"), thr, conf["one_to_one"])
+    one_to_one = conf["one_to_one"]
+    if args.use_stage1 and "prob1" in scored.columns:
+        c1 = conf["stage1"]
+        thr = args.threshold if args.threshold is not None else c1["threshold"]
+        one_to_one = c1["one_to_one"]
+        scored = scored.select("q", "p", pl.col("prob1").alias("prob"))
+        print(f"[decide] using the stage-1 probabilities: threshold={thr:.2f} one_to_one={one_to_one}", flush=True)
+    pred = decide(scored.select("q", "p", "prob"), thr, one_to_one)
     ids = pool.select(pl.int_range(pl.len()).cast(pl.Int32).alias("p"), pl.col("entity_id").alias("pid"))
     s1_ids = q.select(pl.int_range(pl.len()).cast(pl.Int32).alias("q"), pl.col("entity_id").alias("source1_entity_id"))
     del scored, pool
@@ -141,7 +150,7 @@ def main():
         write_lists(cand.select("q", "p"), "candidate_entity_ids", f"{OUT}/candidate_pairs.tsv")
     matches = dict(zip(pred["q"].to_list(), pred["ids"].to_list()))
     n_match = sum(len(v) for v in matches.values())
-    print(f"[output] threshold={thr:.2f} one_to_one={conf['one_to_one']} | S1 entities={n_q:,} | "
+    print(f"[output] threshold={thr:.2f} one_to_one={one_to_one} | S1 entities={n_q:,} | "
           f"with matches={len(matches):,} ({len(matches) / n_q:.3f}) | total matched ids={n_match:,} "
           f"({n_match / n_q:.2f}/entity) | candidates={cand.height:,} ({cand.height / n_q:.1f}/entity) "
           f"| total {time.time() - t0:.0f}s")

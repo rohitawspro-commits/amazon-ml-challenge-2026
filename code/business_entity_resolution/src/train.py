@@ -346,13 +346,16 @@ def main():
         imp2 = sorted(zip(S2, model2.feature_importance("gain")), key=lambda t: -t[1])
         print("[importance2] " + ", ".join(f"{k}={v:.0f}" for k, v in imp2))
         va_scored2 = f2_va.select("q", "p").with_columns(prob=pl.Series(model2.predict(X2_va, num_threads=n_cpu), dtype=pl.Float32))
-        va_scored2.write_parquet(f"{WORK}/val_scored_{cfg.tag}.parquet")
         res2 = evaluate("stage 2", va_scored2, truth, cfg, per_country=val_q)
         del f2, f2_tr, f2_va, X2_va
-    else:
-        va_scored.write_parquet(f"{WORK}/val_scored_{cfg.tag}.parquet")
 
-    final = res2 or res1
+    # stage 2 is kept only if it beats stage 1 on validation (same precision floor); predict.py follows the config
+    use2 = res2 is not None and res2["val_f05"] >= res1["val_f05"]
+    if res2 is not None:
+        print(f"[val] chosen: stage {2 if use2 else 1} (stage 1 F0.5={res1['val_f05']:.4f}, "
+              f"stage 2 F0.5={res2['val_f05']:.4f})", flush=True)
+    (va_scored2 if use2 else va_scored).write_parquet(f"{WORK}/val_scored_{cfg.tag}.parquet")
+    final = res2 if use2 else res1
     v2 = f"{MODELS}/config_v2.json"
     if os.path.exists(v2):
         c2 = json.load(open(v2))
@@ -370,6 +373,8 @@ def main():
             "features": FEATURES, "best_iteration": best_iter, "params": params,
             "folds": cfg.folds, "fold_iterations": fold_iters, "norm_version": NORM_VERSION}
     if model2 is not None:
+        conf["stage2_val"] = res2
+    if use2:
         conf["stage2"] = {"features": stage2.feature_names(rev_names), "pair_cols": stage2.pair_cols(rev_names),
                           "best_iteration": model2.best_iteration, "params": params2}
     json.dump(conf, open(f"{MODELS}/config_{cfg.tag}.json", "w"), indent=1)
