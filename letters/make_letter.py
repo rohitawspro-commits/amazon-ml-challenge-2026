@@ -48,24 +48,26 @@ para("Medical colleges have their own attached hospital. Their students do their
      "training in the college's own hospital under the guidance of their teachers, so they never have to depend "
      "on outside hospitals for training. In engineering we do not have such a system, and every year many of "
      "our students find it difficult to get a good internship or a first job.", align=J, after=6)
-para("In the same way, our college can start an **in-house Product Development Centre** that works like a small "
-     "software company on campus. It can build real products, such as the college's own attendance, library or "
-     "event management systems, and later websites and apps for local businesses and organisations. The centre "
-     "can hire our brilliant students and fresh graduates who are genuinely interested in building products. "
-     "Students who get offers from good outside companies should be free to join them; the centre only needs "
-     "those who want to work on its products.", align=J, after=6)
+para("In the same way, I request that the **college management** set up a **Product Development Centre** on "
+     "our campus. This is not a student startup. The management can bring in a reputed and experienced person "
+     "from the software industry, or partner with an established company, to lead the centre and build real "
+     "products, for example the college's own attendance, library and event systems, and later projects for "
+     "outside organisations. The centre can then take our students as interns and hire brilliant students and "
+     "fresh graduates who are interested in this work. Students who get offers from good outside companies "
+     "should be free to join them; the centre only needs those who want to work on its products.",
+     align=J, after=6)
 para("**Benefits to the college and students:**", after=2)
 for b in ["Every student can get a real, industry-level internship inside the college itself.",
           "Students gain practical experience, which improves their chances in placements.",
           "Talented students get a job opportunity immediately after their degree.",
           "The products and services can earn revenue for the college and help improve its labs.",
           "The college's reputation and its industry-interaction activities will grow.",
-          "Senior students and graduates can guide juniors, so the work continues every year."]:
+          "Students learn directly from an experienced industry professional."]:
     para("•  " + b, align=J, indent=0.45)
 para("", after=4)
-para("To begin, the centre can be started on a small scale as a pilot, with 5 to 10 students under faculty "
-     "mentors in one laboratory, and its first product can be a software solution needed by our own college. It "
-     "can also work together with the college's innovation or incubation cell, if one exists.", align=J, after=6)
+para("To begin, the management can appoint the industry expert as head of the centre, give it one "
+     "laboratory, and start with a small team of students under that person and our faculty. Its first product "
+     "can be a software solution needed by our own college.", align=J, after=6)
 para("I humbly request you to consider this proposal and give me an opportunity to present a detailed plan "
      "at your convenience.", align=J, after=10)
 for line in ["Thanking you,", "Yours faithfully,", "", "(Signature)", "Rohit Pujari",
