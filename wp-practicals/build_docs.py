@@ -154,8 +154,7 @@ def figure(doc, img, caption, max_h=3.7, max_w=6.4):
     P(doc, caption, size=10, align=WD_ALIGN_PARAGRAPH.CENTER, after=6)
 
 
-def build(exp):
-    doc = new_doc()
+def write(doc, exp):
     P(doc, f"EXPERIMENT NO. {exp['no']}", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, after=2)
     P(doc, exp["title"], size=13, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, after=2)
     P(doc, f"Name: {NAME}          Roll No.: {ROLL}          Date: ____________", size=11,
@@ -174,10 +173,104 @@ def build(exp):
         figure(doc, img, cap)
     section(doc, "Conclusion:")
     P(doc, exp["conclusion"])
+
+
+def build(exp):
+    doc = new_doc()
+    write(doc, exp)
     out = f"WP_Practicals_Rohit_Pujari_28_Exp{exp['no']:02d}.docx"
     doc.save(out)
     return out
 
+
+def build_combined(exps):
+    doc = new_doc()
+    for k, exp in enumerate(exps):
+        if k:
+            doc.add_page_break()
+        write(doc, exp)
+    doc.save("WP_Practicals_Rohit_Pujari_28.docx")
+    return "WP_Practicals_Rohit_Pujari_28.docx"
+
+
+# ---------------------------------------------------------------- Experiment 1
+EXP01 = {
+    "no": 1,
+    "title": "Develop a semantic, multi-page technical documentation site",
+    "aim": "To develop the documentation website of \u201cRailTrack\u201d, a practice REST API for Indian Railways "
+           "timetables, as four linked pages (Overview, Getting Started, Endpoints and Errors & FAQ) written in "
+           "semantic HTML5 with landmarks, breadcrumbs, a skip link, accessible data tables, definition lists and "
+           "disclosure widgets, and to check every page automatically with a script that tests the heading "
+           "outline, the landmarks, the table headers and all internal links.",
+    "theory": [
+        ("p", "Semantic HTML means choosing each element for what the content is, not for how it should look. A "
+              "<div> or <span> says nothing about its content, while <nav>, <main>, <table> or <dl> tell the "
+              "browser that the content is a menu, the main part of the page, tabular data or a list of terms. "
+              "Browsers build an accessibility tree from these meanings, which screen readers use to jump between "
+              "regions and headings; search engines and reader modes use the same information. The look is added "
+              "separately with CSS, so the markup stays clean and easy to maintain."),
+        ("h", "Page structure and landmarks"),
+        ("t", [["Element", "Use in the RailTrack docs"],
+               ["<header>", "Site banner with the logo link and the API version written as <data value=\"2.1\">"],
+               ["<nav aria-label=\"Documentation\">", "Side menu of the four pages; the current page has aria-current=\"page\""],
+               ["<nav aria-label=\"Breadcrumb\">", "An ordered list (Docs / Endpoints) showing where the page is; the two "
+                                                   "<nav> elements are told apart by their aria-label"],
+               ["<main id=\"content\">", "The one main region of each page; target of the skip link"],
+               ["<section aria-labelledby>", "Each section is named by the id of its own <h2>"],
+               ["<aside>", "A side note about rate limits that is related to, but not part of, the main text"],
+               ["<footer>, <address>, <time>", "Contact of the maintainers and a machine-readable update date"]],
+         [2.2, 4.3]),
+        ("h", "Content elements chosen for documentation"),
+        ("b", ["**<dl>, <dt>, <dd> and <dfn>:** name-value pairs such as the key terms and the status codes; <dfn> "
+               "marks the place where a term is defined.",
+               "**<ol> versus <ul>:** the setup steps use an ordered list because the order matters; the list of "
+               "possible applications uses an unordered list.",
+               "**<figure>, <pre>, <code>, <samp>, <kbd>:** code listings are figures with a <figcaption>; <code> is "
+               "code to type, <samp> is output from the program and <kbd> is a key on the keyboard.",
+               "**<abbr title>:** gives the full form of REST, JSON and UTC when the pointer rests on the word.",
+               "**<details> and <summary>:** each FAQ answer is a native disclosure widget that opens with mouse or "
+               "keyboard without any JavaScript. The link faq.html#limits opens the page at the matching answer."]),
+        ("h", "Accessible data tables"),
+        ("p", "The endpoint table has a <caption>, column headers in <thead> with scope=\"col\" and the first cell of "
+              "each row written as <th scope=\"row\">. A screen reader can then announce every cell together with its "
+              "row and column header, for example \u201cGET, Path, /trains/{number}\u201d."),
+        ("h", "Headings, skip link and metadata"),
+        ("p", "Every page has exactly one <h1>, <h2> for its sections and no skipped levels, so the heading outline is "
+              "a correct table of contents. A \u201cSkip to content\u201d link is the first focusable element; it is "
+              "moved off-screen with CSS and appears when it receives keyboard focus. Each page has lang=\"en\", its own "
+              "<title> and a meta description for search results."),
+        ("h", "Consistent pages and automatic checks"),
+        ("p", "The small script make_pages.py writes the four pages from one layout function, so the header, menu and "
+              "footer are identical everywhere and aria-current is set on the correct menu item automatically. The "
+              "script check.js opens every page in Chromium through Playwright and tests the rules below."),
+        ("t", [["Check", "Rule"],
+               ["Language and metadata", "lang=\"en\" and a meta description are present"],
+               ["Headings", "Exactly one <h1>; no level is skipped (for example <h2> followed by <h4>)"],
+               ["Landmarks", "<header>, <nav>, <main> and <footer> all exist; the side menu has aria-current"],
+               ["Sections and tables", "Every <section> has aria-labelledby; every <th> has a scope"],
+               ["Links", "Every internal link points to an existing page and, with #id, to an existing id"]],
+         [2.0, 4.5]),
+        ("p", "Result of node check.js: all four pages passed, with 7 internal links per page and no broken link."),
+    ],
+    "code": [
+        ("HTML - page skeleton (index.html)", snip("exp01/index.html", "<body>", "<main id=\"content\">")),
+        ("HTML - accessible table (endpoints.html)",
+         snip("exp01/endpoints.html", "<table>", "<tr><th scope=\"row\">GET</th><td><code>/trains/{number}</code>")
+         + "\n    ...\n  </tbody>\n</table>"),
+        ("HTML - FAQ entry and CSS for the current page",
+         snip("exp01/faq.html", "<details id=\"limits\"", "</details>") + "\n\n"
+         + snip("exp01/style.css", ".side a[aria-current", ".side a[aria-current") + "\n"
+         + snip("exp01/style.css", ".skip {", ".skip:focus")),
+    ],
+    "figures": [("shots/exp01_1.png", "Figure 1.1: Overview page - side menu with aria-current, breadcrumb, <abbr>, "
+                                      "<dl> with <dfn> and an <aside> note"),
+                ("shots/exp01_2.png", "Figure 1.2: Endpoints page - tables with <caption>, column headers and row "
+                                      "headers (th scope=\"row\")")],
+    "conclusion": "A four-page technical documentation site was developed in semantic HTML5. Landmarks, breadcrumbs, a "
+                  "skip link and a correct heading outline made the pages easy to navigate, while definition lists, "
+                  "figures, accessible tables and <details> widgets gave each kind of content its proper meaning. The "
+                  "automatic check script confirmed that all four pages follow these rules and have no broken links.",
+}
 
 # ---------------------------------------------------------------- Experiment 4
 EXP04 = {
@@ -560,5 +653,7 @@ EXP11 = {
 }
 
 if __name__ == "__main__":
-    for e in (EXP04, EXP05, EXP08, EXP09, EXP11):
+    ALL = (EXP01, EXP04, EXP05, EXP08, EXP09, EXP11)
+    for e in ALL:
         print(build(e))
+    print(build_combined(ALL))

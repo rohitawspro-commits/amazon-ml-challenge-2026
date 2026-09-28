@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="RailTrack API status codes and frequently asked questions.">
+  <title>Errors and FAQ - RailTrack API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="index.html">RailTrack <span>API Docs</span></a>
+    <p class="version">Version <data value="2.1">v2.1</data></p>
+  </header>
+  <div class="layout">
+    <nav class="side" aria-label="Documentation">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="endpoints.html">Endpoints</a></li>
+        <li><a href="faq.html" aria-current="page">Errors &amp; FAQ</a></li>
+      </ul>
+    </nav>
+    <main id="content">
+      <nav aria-label="Breadcrumb"><ol class="crumbs"><li><a href="index.html">Docs</a></li> <li aria-current="page">Errors and FAQ</li></ol></nav>
+      <h1>Errors &amp; FAQ</h1>
+      <p class="lead">What the status codes mean and answers to common questions.</p>
+      <section aria-labelledby="codes">
+        <h2 id="codes">Status codes</h2>
+        <dl>
+          <dt><code>400</code> Bad Request</dt><dd>A parameter is missing or has the wrong format.</dd>
+          <dt><code>401</code> Unauthorized</dt><dd>The <code>X-Api-Key</code> header is missing or wrong.</dd>
+          <dt><code>404</code> Not Found</dt><dd>No train or station with that number or code.</dd>
+          <dt><code>429</code> Too Many Requests</dt><dd>You passed the rate limit; wait and retry.</dd>
+        </dl>
+      </section>
+      <section aria-labelledby="questions">
+        <h2 id="questions">Frequently asked questions</h2>
+        <details open>
+          <summary>How often is live status updated?</summary>
+          <p>Every 60 seconds while the train is running.</p>
+        </details>
+        <details id="limits" open>
+          <summary>What are the rate limits?</summary>
+          <p>100 requests per minute on the free plan and 1000 on the college plan.</p>
+        </details>
+        <details>
+          <summary>Are times in IST?</summary>
+          <p>Yes, all times use Indian Standard Time (<abbr title="Coordinated Universal Time">UTC</abbr>+05:30).</p>
+        </details>
+      </section>
+    </main>
+  </div>
+  <footer class="bottom">
+    <p>RailTrack is a practice API created for a Web Programming practical.
+       Last updated <time datetime="2026-09-28">28 September 2026</time>.</p>
+    <address>Maintained by <a href="mailto:docs@railtrack.example">the RailTrack docs team</a></address>
+  </footer>
+</body>
+</html>

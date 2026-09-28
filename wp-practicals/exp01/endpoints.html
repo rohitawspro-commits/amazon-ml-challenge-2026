@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reference of all RailTrack API v2 endpoints and parameters.">
+  <title>Endpoints - RailTrack API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="index.html">RailTrack <span>API Docs</span></a>
+    <p class="version">Version <data value="2.1">v2.1</data></p>
+  </header>
+  <div class="layout">
+    <nav class="side" aria-label="Documentation">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="endpoints.html" aria-current="page">Endpoints</a></li>
+        <li><a href="faq.html">Errors &amp; FAQ</a></li>
+      </ul>
+    </nav>
+    <main id="content">
+      <nav aria-label="Breadcrumb"><ol class="crumbs"><li><a href="index.html">Docs</a></li> <li aria-current="page">Endpoints</li></ol></nav>
+      <h1>Endpoints</h1>
+      <p class="lead">All paths start with <code>https://api.railtrack.example/v2</code>.</p>
+      <section aria-labelledby="list">
+        <h2 id="list">Endpoint reference</h2>
+        <table>
+          <caption>Table 1: Endpoints of RailTrack API v2</caption>
+          <thead>
+            <tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Returns</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">GET</th><td><code>/trains/{number}</code></td><td>Timetable of one train</td></tr>
+            <tr><th scope="row">GET</th><td><code>/trains/{number}/live</code></td><td>Current position and delay in minutes</td></tr>
+            <tr><th scope="row">GET</th><td><code>/stations/{code}</code></td><td>Name, city and platforms of a station</td></tr>
+            <tr><th scope="row">GET</th><td><code>/between?from=&amp;to=</code></td><td>Trains running between two stations</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section aria-labelledby="params">
+        <h2 id="params">Query parameters of <code>/between</code></h2>
+        <table>
+          <caption>Table 2: Parameters</caption>
+          <thead><tr><th scope="col">Name</th><th scope="col">Required</th><th scope="col">Example</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><code>from</code></th><td>Yes</td><td><code>CSMT</code></td></tr>
+            <tr><th scope="row"><code>to</code></th><td>Yes</td><td><code>PUNE</code></td></tr>
+            <tr><th scope="row"><code>date</code></th><td>No (today)</td><td><code>2026-10-02</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <footer class="bottom">
+    <p>RailTrack is a practice API created for a Web Programming practical.
+       Last updated <time datetime="2026-09-28">28 September 2026</time>.</p>
+    <address>Maintained by <a href="mailto:docs@railtrack.example">the RailTrack docs team</a></address>
+  </footer>
+</body>
+</html>
