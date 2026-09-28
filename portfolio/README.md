@@ -49,3 +49,4 @@ rate-limited, the assistant automatically falls back to the built-in answers.
   (no backend needed). Swap in Formspree etc. if you want in-page submission.
 - The OpsMind live demo link is plain `http://`; browsers will open it fine from an
   `https://` page since it's a normal link.
+

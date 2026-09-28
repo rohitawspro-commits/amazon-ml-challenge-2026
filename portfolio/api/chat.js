@@ -32,7 +32,8 @@ FACTS
   memory saturation (exit code 137), CPU throttling and resource-exhaustion attacks to test resilience and
   MTTR telemetry. Stack: Python, Linux cgroups, Kubernetes API, Prometheus.
 - Open to Cloud Engineer, DevOps Engineer and SRE roles.
-- Contact: rohitpujari2407@gmail.com · LinkedIn https://www.linkedin.com/in/rohit-pujari-149723273 ·
+- Contact: rohitpujari7114@gmail.com · Phone / WhatsApp +91 78409 38958 (https://wa.me/917840938958) ·
+  Instagram https://www.instagram.com/ro_pujari_xxiv.07 · LinkedIn https://www.linkedin.com/in/rohit-pujari-149723273 ·
   GitHub https://github.com/Rodevops07
 `.trim();
 

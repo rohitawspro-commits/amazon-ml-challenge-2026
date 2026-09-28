@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const EMAIL = "rohitpujari2407@gmail.com";
+  const EMAIL = "rohitpujari7114@gmail.com";
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -842,7 +842,7 @@
     const subject = encodeURIComponent(`Portfolio contact from ${data.name.trim()}`);
     const body = encodeURIComponent(`${data.message.trim()}\n\n— ${data.name.trim()} (${data.email.trim()})`);
     window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-    status.textContent = "✔ opening your mail app… if nothing opens, email rohitpujari2407@gmail.com directly.";
+    status.textContent = "✔ opening your mail app… if nothing opens, email rohitpujari7114@gmail.com directly.";
     status.classList.add("is-ok");
     form.reset();
   });
@@ -892,6 +892,8 @@
       { group: "Actions", label: "Copy email address", kw: "mail contact", icon: "i-copy", hint: EMAIL, run: copyEmail },
       { group: "Actions", label: "Open GitHub · Rodevops07", kw: "code repos", icon: "i-github", run: openLink("https://github.com/Rodevops07") },
       { group: "Actions", label: "Open LinkedIn", kw: "profile", icon: "i-linkedin", run: openLink("https://www.linkedin.com/in/rohit-pujari-149723273") },
+      { group: "Actions", label: "WhatsApp Rohit", kw: "phone call message chat", icon: "i-whatsapp", hint: "+91 78409 38958", run: openLink("https://wa.me/917840938958") },
+      { group: "Actions", label: "Open Instagram", kw: "insta social", icon: "i-instagram", hint: "ro_pujari_xxiv.07", run: openLink("https://www.instagram.com/ro_pujari_xxiv.07") },
       { group: "Actions", label: "Open OpsMind live app", kw: "demo aws", icon: "i-external", run: openLink("http://44.210.213.12:3000") },
       { group: "Actions", label: "Download resume", kw: "cv pdf", icon: "i-download", run: openLink("assets/Rohit_Pujari_Resume.pdf", true) },
     ]);
@@ -1136,13 +1138,13 @@
     { k: ["experience", "years", "background", "about", "who is", "who's", "tell me about him", "rohit"],
       a: "Rohit Pujari (Ro) is a Cloud & DevOps Engineer and SRE specialist with **1+ year of hands-on experience** architecting, automating and deploying production workloads on AWS. He focuses on zero-downtime releases, eliminating manual toil and building self-healing systems — maintaining 99.99% uptime." },
     { k: ["hire", "open to", "available", "job", "role", "work", "opportunit", "recruit"],
-      a: "Yes — Rohit is **currently open to Cloud Engineer, DevOps Engineer and Site Reliability Engineer (SRE) roles**. Reach him at rohitpujari2407@gmail.com or on LinkedIn: https://www.linkedin.com/in/rohit-pujari-149723273" },
-    { k: ["contact", "email", "mail", "reach", "linkedin", "github", "phone", "connect"],
-      a: "You can reach Rohit at rohitpujari2407@gmail.com\nLinkedIn: https://www.linkedin.com/in/rohit-pujari-149723273\nGitHub: https://github.com/Rodevops07" },
+      a: "Yes — Rohit is **currently open to Cloud Engineer, DevOps Engineer and Site Reliability Engineer (SRE) roles**. Reach him at rohitpujari7114@gmail.com, on WhatsApp (+91 78409 38958) or on LinkedIn: https://www.linkedin.com/in/rohit-pujari-149723273" },
+    { k: ["contact", "email", "mail", "reach", "linkedin", "github", "phone", "connect", "whatsapp", "number", "instagram", "insta"],
+      a: "You can reach Rohit at rohitpujari7114@gmail.com\nPhone / WhatsApp: +91 78409 38958 (https://wa.me/917840938958)\nInstagram: https://www.instagram.com/ro_pujari_xxiv.07\nLinkedIn: https://www.linkedin.com/in/rohit-pujari-149723273\nGitHub: https://github.com/Rodevops07" },
     { k: ["where", "location", "based", "city", "mumbai", "palghar", "india", "remote", "relocat"],
       a: "Rohit is based in **Palghar / Mumbai, Maharashtra, India**." },
     { k: ["resume", "cv"],
-      a: "You can download Rohit's resume with the **Download Resume** button at the top of the page, or email him at rohitpujari2407@gmail.com." },
+      a: "You can download Rohit's resume with the **Download Resume** button at the top of the page, or email him at rohitpujari7114@gmail.com." },
     { k: ["uptime", "99.99", "availability", "guardrail", "stat"],
       a: "Key numbers: **99.99%** cloud uptime maintained · **25.5s** automated incident recovery · **20+** chaos scenarios benchmarked · **100%** deterministic guardrail security." },
     { k: ["project", "portfolio", "built", "work on"],
@@ -1163,6 +1165,6 @@
     }
     return best
       ? best.a
-      : "I'm focused on Rohit's professional profile — try asking about his AWS, Kubernetes or CI/CD skills, the OpsMind project, or whether he's open to work. You can also email him directly at rohitpujari2407@gmail.com.";
+      : "I'm focused on Rohit's professional profile — try asking about his AWS, Kubernetes or CI/CD skills, the OpsMind project, or whether he's open to work. You can also email him directly at rohitpujari7114@gmail.com.";
   }
 })();

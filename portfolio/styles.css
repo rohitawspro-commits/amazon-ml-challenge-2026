@@ -837,3 +837,6 @@ html.has-cursor .cursor { display: block; position: fixed; inset: 0; pointer-eve
 .iso__svg .tag--ops rect { fill: #1b1b1f; stroke: var(--accent); stroke-opacity: .7; }
 .iso__svg .tag--ops text { fill: var(--accent-hi); }
 @media (max-width: 760px) { .terminal__body { height: 280px; } }
+.contact__loc a { color: var(--muted); border-bottom: 1px solid var(--line-strong); transition: color .2s, border-color .2s; }
+.contact__loc a:hover { color: var(--text); border-color: var(--text); }
+.contact__loc { flex-wrap: wrap; }
