@@ -46,20 +46,24 @@
   }, { rootMargin: "-45% 0px -50% 0px" });
   $$("section[id]").forEach((s) => sectionObserver.observe(s));
 
-  /* ---------- Reveal on scroll (with sibling stagger) ---------- */
+  /* ---------- Reveal on scroll ----------
+     Everything is visible at rest; only elements that start below the fold
+     are hidden, then faded in (with a small sibling stagger) as they enter. */
   const revealEls = $$(".reveal");
+  const fold = window.innerHeight * 0.92;
   revealEls.forEach((el) => {
     const siblings = [...el.parentElement.children].filter((c) => c.classList.contains("reveal"));
-    el.style.setProperty("--d", `${Math.min(siblings.indexOf(el), 6) * 0.08}s`);
+    el.style.setProperty("--d", `${Math.min(siblings.indexOf(el), 5) * 0.07}s`);
+    if (!reduceMotion && el.getBoundingClientRect().top > fold) el.classList.add("is-pending");
   });
   const revealObserver = new IntersectionObserver((entries, obs) => {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
-      entry.target.classList.add("is-visible");
+      entry.target.classList.remove("is-pending");
       obs.unobserve(entry.target);
     });
-  }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
-  revealEls.forEach((el) => revealObserver.observe(el));
+  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+  revealEls.filter((el) => el.classList.contains("is-pending")).forEach((el) => revealObserver.observe(el));
 
   /* ---------- Stat counters ---------- */
   const animateCount = (el) => {
@@ -84,15 +88,6 @@
     });
   }, { threshold: 0.6 });
   $$("[data-count]").forEach((el) => countObserver.observe(el));
-
-  /* ---------- Card spotlight follows cursor ---------- */
-  $$(".skill, .project").forEach((card) => {
-    card.addEventListener("pointermove", (e) => {
-      const r = card.getBoundingClientRect();
-      card.style.setProperty("--mx", `${e.clientX - r.left}px`);
-      card.style.setProperty("--my", `${e.clientY - r.top}px`);
-    });
-  });
 
   /* ---------- Typed role ---------- */
   const typed = $("#typed");
@@ -228,7 +223,7 @@
   const setMode = (live) => {
     mode.innerHTML = live
       ? '<span class="dot"></span> Groq Llama-3 · live'
-      : '<span class="dot" style="background:#fbbf24;box-shadow:0 0 10px #fbbf24"></span> profile knowledge mode';
+      : '<span class="dot dot--idle"></span> profile knowledge mode';
   };
 
   const open = (question) => {

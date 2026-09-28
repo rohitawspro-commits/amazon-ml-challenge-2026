@@ -1,8 +1,9 @@
 # Rohit Pujari — Cloud & DevOps Portfolio
 
-Dark, neon (violet/cyan) single-page portfolio with glassmorphic cards, scroll animations,
-a live "self-healing incident" terminal and an **AI assistant** (Groq Llama-3) that answers
-recruiter questions about Rohit's skills and projects.
+Minimal monochrome single-page portfolio (black / charcoal / grey, Geist + Geist Mono,
+1px borders) with subtle scroll reveals, a cloud architecture diagram, a CI/CD pipeline
+flow, a live "self-healing incident" terminal and an **AI assistant** (Groq Llama-3) that
+answers recruiter questions about Rohit's skills and projects.
 
 Plain HTML/CSS/JS, no build step.
 
@@ -19,7 +20,8 @@ portfolio/
 
 ## 1. Add your photo and resume
 - Save your photo as `assets/profile.jpg` (portrait works best; it is cropped to 4:5 and
-  focused slightly right of centre). Until it exists, a neon "RP" monogram is shown.
+  focused slightly right of centre, shown in greyscale with colour on hover). Until it
+  exists, a grey "RP" monogram is shown.
 - Save your resume as `assets/Rohit_Pujari_Resume.pdf` (used by both "Resume" buttons).
 
 ## 2. Run locally
