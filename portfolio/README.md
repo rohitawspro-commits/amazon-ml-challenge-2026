@@ -1,9 +1,14 @@
 # Rohit Pujari — Cloud & DevOps Portfolio
 
-Minimal monochrome single-page portfolio (black / charcoal / grey, Geist + Geist Mono,
-1px borders) with subtle scroll reveals, a cloud architecture diagram, a CI/CD pipeline
-flow, a live "self-healing incident" terminal and an **AI assistant** (Groq Llama-3) that
-answers recruiter questions about Rohit's skills and projects.
+Dark, console-flavoured single-page portfolio (black / charcoal / cool greys, one silver accent,
+Geist + Geist Mono). A terminal boot sequence opens onto a live "AWS console" hero (EC2 instances,
+ticking CPU/memory sparklines, Elastic IP, security groups). Below it: an isometric AWS architecture
+that auto-plays the OpsMind self-healing loop (HPA scaling, OOMKilled pod, Llama-3 diagnosis, two
+guardrails, rolling restart) in sync with a terminal replay; a CloudWatch-style dashboard with a
+scroll-pinned MTTR 45 min → 25.5 s scrub; a GitHub Actions run view streaming logs; a Ctrl/⌘+K
+command palette; custom cursor, magnetic buttons and cursor-aware card glow; and an **AI assistant**
+(Groq Llama-3) that answers recruiter questions. Every animation pauses off-screen and is replaced
+by a static final state under `prefers-reduced-motion`.
 
 Plain HTML/CSS/JS, no build step.
 

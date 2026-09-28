@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Rohit Pujari — Cloud & DevOps Engineer</title>
   <meta name="description" content="Rohit Pujari (Ro) — Cloud & DevOps Engineer and SRE specialist. Resilient AWS infrastructure, CI/CD automation, Kubernetes and self-healing systems." />
-  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="theme-color" content="#09090a" />
   <meta property="og:title" content="Rohit Pujari — Cloud & DevOps Engineer" />
   <meta property="og:description" content="Architecting resilient cloud infrastructure, automating deployments, and scaling microservices." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0a0a'/><rect x='.5' y='.5' width='31' height='31' rx='6.5' fill='none' stroke='%232a2a2a'/><text x='16' y='21' font-family='monospace' font-size='13' font-weight='600' text-anchor='middle' fill='%23ededed'>RP</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2309090a'/><rect x='.5' y='.5' width='31' height='31' rx='6.5' fill='none' stroke='%232a2a2e'/><text x='16' y='21' font-family='monospace' font-size='13' font-weight='600' text-anchor='middle' fill='%23ececef'>RP</text></svg>" />
 </head>
 <body>
   <!-- SVG icon sprite -->
@@ -31,8 +31,19 @@
     <symbol id="i-code" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 3.5l1.7 5 5 1.7-5 1.7-1.7 5-1.7-5-5-1.7 5-1.7 1.7-5Zm6.5 11 .7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/></symbol>
     <symbol id="i-pulse" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm9 2-4-4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M9 9h11v11H9zM5 15H4V4h11v1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M5 9h15M4 15h15M10 3 8 21M16 3l-2 18"/></symbol>
   </svg>
 
+  <!-- Boot sequence (first visit per session, skipped for reduced motion) -->
+  <div class="boot" id="boot" aria-hidden="true" hidden>
+    <pre class="boot__log mono" id="bootLog"></pre>
+    <span class="boot__skip mono">press any key to skip</span>
+  </div>
+
+  <div class="cursor" aria-hidden="true"><span class="cursor__ring"></span><span class="cursor__dot"></span></div>
   <div class="scroll-progress" aria-hidden="true"></div>
 
   <!-- NAV -->
@@ -41,12 +52,16 @@
       <a href="#home" class="nav__logo mono"><span class="nav__mark" aria-hidden="true">&gt;_</span> ro@cloud</a>
       <nav class="nav__links" id="navLinks" aria-label="Primary">
         <a href="#about" class="nav__link">About</a>
-        <a href="#skills" class="nav__link">Skills</a>
         <a href="#systems" class="nav__link">Systems</a>
+        <a href="#pipeline" class="nav__link">Pipeline</a>
+        <a href="#skills" class="nav__link">Skills</a>
         <a href="#projects" class="nav__link">Projects</a>
         <a href="#contact" class="nav__link">Contact</a>
         <a href="assets/Rohit_Pujari_Resume.pdf" class="btn btn--ghost btn--sm" download>Resume</a>
       </nav>
+      <button type="button" class="kbar-btn mono" data-palette-open aria-label="Open command palette" data-magnetic>
+        <svg class="ic"><use href="#i-search"/></svg><span class="kbar-btn__label">Search</span><kbd>Ctrl K</kbd>
+      </button>
       <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span>
       </button>
@@ -56,11 +71,11 @@
   <main>
     <!-- HERO -->
     <section class="hero" id="home">
-      <div class="hero__grid" aria-hidden="true"></div>
+      <div class="hero__bg" aria-hidden="true" data-parallax="0.25"><div class="hero__grid"></div><div class="hero__halo"></div></div>
       <div class="container hero__inner">
         <div class="hero__content">
           <p class="hero__status mono reveal"><span class="dot"></span> available for hire · open to Cloud / DevOps / SRE roles</p>
-          <h1 class="hero__name reveal">Rohit Pujari <span class="hero__nick">(Ro)</span></h1>
+          <h1 class="hero__name reveal"><span class="sheen">Rohit Pujari</span> <span class="hero__nick">(Ro)</span></h1>
           <p class="hero__role mono reveal">
             <span class="hero__prompt">$</span> <span id="typed" class="typed">Cloud &amp; DevOps Engineer | SRE Specialist</span><span class="caret" aria-hidden="true"></span>
           </p>
@@ -71,9 +86,9 @@
             Passionate about building zero-downtime cloud architectures, automating CI/CD pipelines, and engineering self-healing systems on AWS.
           </p>
           <div class="hero__actions reveal">
-            <a href="#projects" class="btn btn--primary">View Projects <svg class="ic"><use href="#i-arrow"/></svg></a>
-            <a href="assets/Rohit_Pujari_Resume.pdf" class="btn btn--ghost" download><svg class="ic"><use href="#i-download"/></svg> Download Resume</a>
-            <a href="#contact" class="btn btn--ghost">Get in Touch</a>
+            <a href="#projects" class="btn btn--primary" data-magnetic>View Projects <svg class="ic"><use href="#i-arrow"/></svg></a>
+            <a href="assets/Rohit_Pujari_Resume.pdf" class="btn btn--ghost" download data-magnetic><svg class="ic"><use href="#i-download"/></svg> Download Resume</a>
+            <a href="#contact" class="btn btn--ghost" data-magnetic>Get in Touch</a>
             <button type="button" class="btn btn--text" data-ai-open><svg class="ic"><use href="#i-spark"/></svg> Ask my AI</button>
           </div>
           <ul class="hero__socials mono reveal">
@@ -84,16 +99,51 @@
           </ul>
         </div>
 
-        <figure class="hero__visual reveal">
-          <div class="avatar" id="avatar">
-            <img src="assets/profile.jpg" alt="Rohit Pujari" class="avatar__img" width="600" height="750" fetchpriority="high" onerror="this.closest('.avatar').classList.add('avatar--fallback')" />
-            <span class="avatar__initials" aria-hidden="true">RP</span>
+        <!-- Live AWS console -->
+        <div class="console glow reveal" id="console" role="img" aria-label="Simulated AWS EC2 console: two t3.medium instances running with live CPU and memory, Elastic IP 44.210.213.12 and security groups">
+          <div class="console__bar">
+            <span class="console__logo mono">aws</span>
+            <span class="console__crumbs mono">EC2 <i>›</i> Instances</span>
+            <span class="console__region mono">us-east-1</span>
+            <span class="avatar avatar--xs"><img src="assets/profile.jpg" alt="" class="avatar__img" onerror="this.closest('.avatar').classList.add('avatar--fallback')" /><span class="avatar__initials">RP</span></span>
           </div>
-          <figcaption class="avatar__caption mono">
-            <span>AWS · Kubernetes · Docker</span>
-            <span><span class="dot"></span> 99.99% uptime</span>
-          </figcaption>
-        </figure>
+          <div class="console__summary">
+            <div><span class="lbl mono">Availability · 30d</span><strong class="num"><span id="uptime">99.99</span>%</strong></div>
+            <div><span class="lbl mono">Instances</span><strong>2 <small>running</small></strong></div>
+            <div><span class="lbl mono">Status checks</span><strong>4/4 <small>passed</small></strong></div>
+          </div>
+          <div class="instances">
+            <article class="inst">
+              <header class="inst__head"><span class="state"><span class="state__dot"></span>running</span><span class="inst__name">opsmind-prod</span></header>
+              <dl class="inst__meta mono">
+                <div><dt>Instance ID</dt><dd>i-0a7f3c9e21b4d5e68</dd></div>
+                <div><dt>Type</dt><dd>t3.medium</dd></div>
+                <div><dt>AZ</dt><dd>us-east-1a</dd></div>
+                <div><dt>Uptime</dt><dd class="num" data-up="3542917">—</dd></div>
+              </dl>
+              <div class="spark" data-spark="cpu" data-base="38"><div class="spark__head mono"><span>CPU</span><b class="num">—</b></div><svg viewBox="0 0 120 30" preserveAspectRatio="none"><path class="spark__area"/><path class="spark__line"/></svg></div>
+              <div class="spark" data-spark="mem" data-base="61"><div class="spark__head mono"><span>Memory</span><b class="num">—</b></div><svg viewBox="0 0 120 30" preserveAspectRatio="none"><path class="spark__area"/><path class="spark__line"/></svg></div>
+            </article>
+            <article class="inst">
+              <header class="inst__head"><span class="state"><span class="state__dot"></span>running</span><span class="inst__name">deploy-runner</span></header>
+              <dl class="inst__meta mono">
+                <div><dt>Instance ID</dt><dd>i-04c2b8e1f9a6d3071</dd></div>
+                <div><dt>Type</dt><dd>t3.medium</dd></div>
+                <div><dt>AZ</dt><dd>us-east-1a</dd></div>
+                <div><dt>Uptime</dt><dd class="num" data-up="1209311">—</dd></div>
+              </dl>
+              <div class="spark" data-spark="cpu" data-base="22"><div class="spark__head mono"><span>CPU</span><b class="num">—</b></div><svg viewBox="0 0 120 30" preserveAspectRatio="none"><path class="spark__area"/><path class="spark__line"/></svg></div>
+              <div class="spark" data-spark="mem" data-base="47"><div class="spark__head mono"><span>Memory</span><b class="num">—</b></div><svg viewBox="0 0 120 30" preserveAspectRatio="none"><path class="spark__area"/><path class="spark__line"/></svg></div>
+            </article>
+          </div>
+          <div class="console__net">
+            <div class="eip"><span class="lbl mono">Elastic IP</span><span class="mono eip__v">44.210.213.12</span></div>
+            <div class="sgs"><span class="lbl mono">Security groups</span>
+              <ul class="mono"><li>sg-web <i>80 · 443</i></li><li>sg-k8s <i>6443</i></li><li>sg-ssh <i>22 · my-ip</i></li></ul>
+            </div>
+          </div>
+          <div class="console__foot mono"><span><span class="dot"></span> health check passed <span id="hcAgo">1s</span> ago</span><span>live simulation</span></div>
+        </div>
       </div>
     </section>
 
@@ -102,52 +152,194 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow mono">About</p>
-          <h2 class="section__title">Bridging the gap between <span class="muted">code and infrastructure</span></h2>
+          <h2 class="section__title split">Bridging the gap between <span class="muted">code and infrastructure</span></h2>
         </div>
         <div class="about">
-          <div class="about__text reveal">
-            <p>I am a Cloud &amp; DevOps Engineer with <strong>1+ year of practical hands-on experience</strong> in architecting, automating, and deploying production workloads on AWS. My expertise spans Linux system administration, Docker containerization, Kubernetes orchestration, and building autonomous self-healing SRE pipelines.</p>
-            <p>I specialize in bridging the gap between code and infrastructure — eliminating deployment friction, preventing manual toil, and ensuring high availability (<strong>99.99% uptime</strong>) with zero-downtime rolling releases.</p>
+          <figure class="portrait reveal">
+            <div class="avatar avatar--lg glow">
+              <img src="assets/profile.jpg" alt="Rohit Pujari" class="avatar__img" width="600" height="750" loading="lazy" onerror="this.closest('.avatar').classList.add('avatar--fallback')" />
+              <span class="avatar__initials" aria-hidden="true">RP</span>
+            </div>
+            <figcaption class="portrait__caption mono">
+              <span>AWS · Kubernetes · Docker</span>
+              <span><span class="dot"></span> 99.99% uptime</span>
+            </figcaption>
+          </figure>
+          <div class="about__body">
+            <div class="about__text reveal">
+              <p>I am a Cloud &amp; DevOps Engineer with <strong>1+ year of practical hands-on experience</strong> in architecting, automating, and deploying production workloads on AWS. My expertise spans Linux system administration, Docker containerization, Kubernetes orchestration, and building autonomous self-healing SRE pipelines.</p>
+              <p>I specialize in bridging the gap between code and infrastructure — eliminating deployment friction, preventing manual toil, and ensuring high availability (<strong>99.99% uptime</strong>) with zero-downtime rolling releases.</p>
+            </div>
+            <dl class="about__meta mono reveal">
+              <div><dt>location</dt><dd>Palghar / Mumbai, IN</dd></div>
+              <div><dt>focus</dt><dd>AWS · K8s · SRE</dd></div>
+              <div><dt>status</dt><dd><span class="dot"></span> open_to_work</dd></div>
+            </dl>
           </div>
-          <dl class="about__meta mono reveal">
-            <div><dt>location</dt><dd>Palghar / Mumbai, IN</dd></div>
-            <div><dt>focus</dt><dd>AWS · K8s · SRE</dd></div>
-            <div><dt>status</dt><dd><span class="dot"></span> open_to_work</dd></div>
-          </dl>
         </div>
 
         <div class="stats reveal">
-          <div class="stat">
+          <div class="stat glow">
             <div class="stat__value"><span data-count="99.99" data-decimals="2">99.99</span><span class="stat__unit">%</span></div>
             <div class="stat__label">Cloud Uptime Maintained</div>
           </div>
-          <div class="stat">
+          <div class="stat glow">
             <div class="stat__value"><span data-count="25.5" data-decimals="1">25.5</span><span class="stat__unit">s</span></div>
             <div class="stat__label">Automated Incident Recovery (MTTR)</div>
           </div>
-          <div class="stat">
+          <div class="stat glow">
             <div class="stat__value"><span data-count="20" data-decimals="0">20</span><span class="stat__unit">+</span></div>
             <div class="stat__label">Chaos Scenarios Benchmarked</div>
           </div>
-          <div class="stat">
+          <div class="stat glow">
             <div class="stat__value"><span data-count="100" data-decimals="0">100</span><span class="stat__unit">%</span></div>
             <div class="stat__label">Deterministic Guardrail Security</div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="replay">
-          <div class="replay__copy reveal">
-            <p class="eyebrow mono">Live incident replay</p>
-            <h3 class="replay__title">What a 25.5-second recovery looks like</h3>
-            <p class="replay__text">A pod gets OOMKilled under a chaos injection. OpsMind's Groq Llama-3 agent diagnoses it, both deterministic guardrails validate the fix, and a rolling restart brings it back with zero downtime.</p>
-            <button class="btn btn--ghost btn--sm" data-ai-open data-ai-ask="How does OpsMind's self-healing work?"><svg class="ic"><use href="#i-spark"/></svg> Ask the AI how it works</button>
-          </div>
-          <div class="terminal reveal" aria-label="Terminal showing a self-healing incident recovery">
-            <div class="terminal__bar">
-              <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
-              <span class="terminal__title mono">ro@opsmind: ~/sre</span>
+    <!-- SYSTEMS: isometric architecture + self-healing loop -->
+    <section class="section" id="systems">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow mono">Systems</p>
+          <h2 class="section__title split">How I design and ship <span class="muted">production infrastructure</span></h2>
+        </div>
+
+        <div class="arch">
+          <figure class="iso glow reveal">
+            <figcaption class="panel__head">
+              <span class="panel__title">Cloud Architecture</span>
+              <span class="panel__meta mono">request path · storage · self-healing loop</span>
+            </figcaption>
+            <div class="iso__hud mono" aria-hidden="true">
+              <span class="chip" id="isoReplicas">replicas 3/3</span>
+              <span class="chip chip--event" id="isoEvent">steady · serving traffic</span>
             </div>
-            <pre class="terminal__body mono" id="terminal"></pre>
+            <div class="iso__scroll">
+              <svg class="iso__svg" id="isoSvg" viewBox="-312 -42 736 468" role="img" aria-labelledby="archTitle archDesc">
+                <title id="archTitle">Cloud architecture</title>
+                <desc id="archDesc">Users reach DNS, then an Nginx reverse proxy in a public subnet, then an AWS EC2 host in a private subnet running Kubernetes pods, which persist to EBS and S3. CloudWatch and Prometheus collect metrics and alert OpsMind, which diagnoses with Groq Llama-3, validates with two guardrails and remediates Kubernetes with a rolling restart.</desc>
+              </svg>
+            </div>
+            <ul class="iso__legend mono" aria-hidden="true">
+              <li><i class="lg lg--pk"></i>request packet</li>
+              <li><i class="lg lg--ok"></i>pod running</li>
+              <li><i class="lg lg--err"></i>OOMKilled</li>
+              <li><i class="lg lg--fix"></i>remediation</li>
+            </ul>
+          </figure>
+
+          <div class="replay">
+            <div class="replay__copy reveal">
+              <p class="eyebrow mono">Live incident replay</p>
+              <h3 class="replay__title">What a 25.5-second recovery looks like</h3>
+              <p class="replay__text">A pod gets OOMKilled under a chaos injection. OpsMind's Groq Llama-3 agent diagnoses it, both deterministic guardrails validate the fix, and a rolling restart brings it back with zero downtime.</p>
+              <button class="btn btn--ghost btn--sm" data-ai-open data-ai-ask="How does OpsMind's self-healing work?"><svg class="ic"><use href="#i-spark"/></svg> Ask the AI how it works</button>
+            </div>
+            <ol class="loop mono reveal" id="loopSteps" aria-label="Self-healing loop steps">
+              <li data-step="0"><i></i><span>Detect</span><em>OOMKilled (137)</em></li>
+              <li data-step="1"><i></i><span>Diagnose</span><em>Groq Llama-3</em></li>
+              <li data-step="2"><i></i><span>Guardrail 1/2</span><em>schema validation</em></li>
+              <li data-step="3"><i></i><span>Guardrail 2/2</span><em>resource policy</em></li>
+              <li data-step="4"><i></i><span>Remediate</span><em>rolling restart</em></li>
+              <li class="loop__timer"><span>MTTR</span><b class="num" id="loopTimer">00.0s</b></li>
+            </ol>
+            <div class="terminal reveal" aria-label="Terminal showing a self-healing incident recovery">
+              <div class="terminal__bar">
+                <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+                <span class="terminal__title mono">ro@opsmind: ~/sre</span>
+              </div>
+              <pre class="terminal__body mono" id="terminal"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- METRICS: CloudWatch dashboard with pinned MTTR scrub -->
+    <section class="section section--pin" id="metrics">
+      <div class="pin" id="pin">
+        <div class="pin__sticky">
+          <div class="container">
+            <div class="section__head section__head--row reveal">
+              <div>
+                <p class="eyebrow mono">CloudWatch · Observability</p>
+                <h2 class="section__title split">From a 45-minute page <span class="muted">to a 25.5-second heal</span></h2>
+              </div>
+              <p class="section__aside mono">dashboard: opsmind-prod · period 5s · last 5 min<br />simulated live telemetry</p>
+            </div>
+
+            <div class="cw">
+              <div class="cw__widget glow" data-chart="latency">
+                <div class="cw__head"><span class="cw__title">Latency p99</span><span class="alarm mono" data-alarm>OK</span><b class="cw__val num mono" data-val>—</b></div>
+                <canvas aria-label="p99 latency line chart, with a 300 ms SLO line and a spike during the OOMKilled incident"></canvas>
+              </div>
+              <div class="cw__widget glow" data-chart="rps">
+                <div class="cw__head"><span class="cw__title">Requests / s</span><span class="alarm mono" data-alarm>OK</span><b class="cw__val num mono" data-val>—</b></div>
+                <canvas aria-label="Requests per second line chart"></canvas>
+              </div>
+              <div class="cw__widget glow" data-chart="errors">
+                <div class="cw__head"><span class="cw__title">5xx error rate</span><span class="alarm mono" data-alarm>OK</span><b class="cw__val num mono" data-val>—</b></div>
+                <canvas aria-label="5xx error rate line chart, spiking during the incident and recovering within 25.5 seconds"></canvas>
+              </div>
+
+              <div class="mttr glow" id="mttr">
+                <div class="mttr__top">
+                  <p class="mttr__label mono">MTTR · mean time to recovery</p>
+                  <span class="mttr__pct mono" id="mttrPct">−98.6% MTTR</span>
+                </div>
+                <div class="mttr__readout"><span class="num" id="mttrBig">45:00.0</span><small class="mono">min : sec</small></div>
+                <div class="mttr__rows">
+                  <div class="mttr__row"><span class="mttr__who">Manual on-call</span><div class="mttr__bar"><i style="width:100%"></i></div><span class="mttr__v mono">45 min</span></div>
+                  <div class="mttr__row mttr__row--after"><span class="mttr__who">OpsMind self-healing</span><div class="mttr__bar"><i id="mttrBar"></i></div><span class="mttr__v mono" id="mttrSmall">45 min</span></div>
+                </div>
+                <p class="mttr__note mono" id="mttrNote">page → ssh → grep logs → guess → restart</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PIPELINE: GitHub Actions run -->
+    <section class="section" id="pipeline">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow mono">CI/CD Pipeline</p>
+          <h2 class="section__title split">Commit to production · <span class="muted">zero downtime</span></h2>
+        </div>
+
+        <div class="gha glow reveal" id="gha">
+          <div class="gha__top">
+            <div class="gha__run">
+              <span class="gha__status" id="ghaStatus" data-s="running"></span>
+              <div>
+                <p class="gha__name">Deploy to production <span class="dim mono" id="ghaNum">#214</span></p>
+                <p class="gha__meta mono">deploy.yml · on: push · <span class="gha__branch">main</span> · <span id="ghaSha">3f9c2ab</span> by Rodevops07</p>
+              </div>
+            </div>
+            <dl class="gha__facts mono">
+              <div><dt>Status</dt><dd id="ghaState">In progress</dd></div>
+              <div><dt>Total duration</dt><dd class="num" id="ghaTotal">0s</dd></div>
+            </dl>
+          </div>
+          <div class="gha__body">
+            <ol class="gha__graph" id="ghaGraph">
+              <li class="gnode" data-job="push"><span class="gnode__ic"></span><span class="gnode__n mono">01</span><span class="gnode__t">git push</span><span class="gnode__s mono">main branch</span></li>
+              <li class="gnode" data-job="actions"><span class="gnode__ic"></span><span class="gnode__n mono">02</span><span class="gnode__t">GitHub Actions</span><span class="gnode__s mono">workflow runs</span></li>
+              <li class="gnode" data-job="tests"><span class="gnode__ic"></span><span class="gnode__n mono">03</span><span class="gnode__t">Tests</span><span class="gnode__s mono">lint · unit</span><span class="gnode__d mono num"></span></li>
+              <li class="gnode" data-job="docker"><span class="gnode__ic"></span><span class="gnode__n mono">04</span><span class="gnode__t">Docker build</span><span class="gnode__s mono">multi-stage image</span><span class="gnode__d mono num"></span></li>
+              <li class="gnode" data-job="terraform"><span class="gnode__ic"></span><span class="gnode__n mono">05</span><span class="gnode__t">Terraform</span><span class="gnode__s mono">plan · apply</span><span class="gnode__d mono num"></span></li>
+              <li class="gnode" data-job="deploy"><span class="gnode__ic"></span><span class="gnode__n mono">06</span><span class="gnode__t">K8s deploy</span><span class="gnode__s mono">rolling update</span><span class="gnode__d mono num"></span></li>
+              <li class="gnode" data-job="health"><span class="gnode__ic"></span><span class="gnode__n mono">07</span><span class="gnode__t">Health check</span><span class="gnode__s mono">readiness probes</span><span class="gnode__d mono num"></span></li>
+              <li class="gnode gnode--live" data-job="live"><span class="gnode__ic"></span><span class="gnode__n mono">08</span><span class="gnode__t">Live</span><span class="gnode__s mono">99.99% uptime</span></li>
+            </ol>
+            <div class="gha__log">
+              <div class="gha__logbar mono"><span id="ghaJob">Tests</span><span class="dim">logs</span></div>
+              <pre class="gha__pre mono" id="ghaLog" aria-live="off"></pre>
+            </div>
           </div>
         </div>
       </div>
@@ -158,45 +350,45 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow mono">Technical arsenal</p>
-          <h2 class="section__title">Skills &amp; <span class="muted">Arsenal</span></h2>
+          <h2 class="section__title split">Skills &amp; <span class="muted">Arsenal</span></h2>
         </div>
         <div class="skills reveal">
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-cloud"/></svg><span class="skill__lead mono">AWS</span></div>
             <h3 class="skill__title">Cloud Platforms</h3>
             <ul class="tags">
               <li>EC2</li><li>Elastic IP</li><li>EBS</li><li>S3</li><li>VPC</li><li>Security Groups</li><li>IAM</li><li>CloudWatch</li>
             </ul>
           </article>
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-box"/></svg><span class="skill__lead mono">Docker · Kubernetes</span></div>
             <h3 class="skill__title">Containers &amp; Orchestration</h3>
             <ul class="tags">
               <li>Docker</li><li>Docker Compose</li><li>Pods</li><li>Deployments</li><li>Services</li><li>Ingress</li><li>cgroups</li>
             </ul>
           </article>
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-flow"/></svg><span class="skill__lead mono">Pipelines · IaC</span></div>
             <h3 class="skill__title">CI/CD &amp; Automation</h3>
             <ul class="tags">
               <li>GitHub Actions</li><li>Jenkins</li><li>Terraform (IaC)</li><li>Git</li>
             </ul>
           </article>
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-term"/></svg><span class="skill__lead mono">Linux (Ubuntu/Debian)</span></div>
             <h3 class="skill__title">Operating Systems &amp; Networking</h3>
             <ul class="tags">
               <li>Shell &amp; Bash Scripting</li><li>Reverse Proxy Ingress</li><li>DNS Management</li><li>SSH</li>
             </ul>
           </article>
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-code"/></svg><span class="skill__lead mono">Python · JS</span></div>
             <h3 class="skill__title">Programming &amp; Backend</h3>
             <ul class="tags">
               <li>Python (FastAPI)</li><li>Bash</li><li>Next.js</li><li>Node.js</li>
             </ul>
           </article>
-          <article class="skill">
+          <article class="skill glow">
             <div class="skill__head"><svg class="ic"><use href="#i-pulse"/></svg><span class="skill__lead mono">SRE · AIOps</span></div>
             <h3 class="skill__title">Reliability &amp; Monitoring</h3>
             <ul class="tags">
@@ -207,98 +399,16 @@
       </div>
     </section>
 
-    <!-- SYSTEMS -->
-    <section class="section" id="systems">
-      <div class="container">
-        <div class="section__head reveal">
-          <p class="eyebrow mono">Systems</p>
-          <h2 class="section__title">How I design and ship <span class="muted">production infrastructure</span></h2>
-        </div>
-
-        <figure class="diagram reveal">
-          <figcaption class="diagram__head">
-            <span class="diagram__title">Cloud Architecture</span>
-            <span class="diagram__meta mono">request path · storage · self-healing loop</span>
-          </figcaption>
-          <div class="diagram__scroll">
-            <svg class="arch" viewBox="0 0 1080 400" role="img" aria-labelledby="archTitle archDesc">
-              <title id="archTitle">Cloud architecture</title>
-              <desc id="archDesc">Users reach DNS, then an Nginx reverse proxy, then an AWS EC2 host running Kubernetes, which persists to EBS and S3. CloudWatch and Prometheus collect metrics and alert OpsMind, which diagnoses with Groq Llama-3, validates with two guardrails and remediates Kubernetes with a rolling restart.</desc>
-              <defs>
-                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                  <path d="M0 1 9 5 0 9" fill="none" stroke="#6f6f6f" stroke-width="1.5"/>
-                </marker>
-                <marker id="ah-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                  <path d="M0 1 9 5 0 9" fill="none" stroke="#d4d4d4" stroke-width="1.5"/>
-                </marker>
-              </defs>
-
-              <!-- groups -->
-              <rect class="grp" x="324" y="34" width="740" height="190" rx="10"/>
-              <text class="grp__label" x="340" y="56">AWS · VPC · Security Groups</text>
-              <rect class="grp grp--loop" x="360" y="244" width="524" height="150" rx="10"/>
-              <text class="grp__label" x="376" y="386">Self-healing loop · MTTR 25.5s</text>
-
-              <!-- request path edges -->
-              <path class="edge flow" d="M140 160H178" marker-end="url(#ah)"/>
-              <path class="edge flow" d="M300 160H338" marker-end="url(#ah)"/>
-              <path class="edge flow" d="M470 160H508" marker-end="url(#ah)"/>
-              <path class="edge flow" d="M640 160H678" marker-end="url(#ah)"/>
-              <path class="edge flow" d="M850 142C876 142 874 96 898 96" marker-end="url(#ah)"/>
-              <path class="edge flow" d="M850 178C876 178 874 226 898 226" marker-end="url(#ah)"/>
-
-              <!-- loop edges -->
-              <path class="edge edge--loop flow flow--slow" d="M810 208V298" marker-end="url(#ah-hi)"/>
-              <path class="edge edge--loop flow flow--slow" d="M660 332H602" marker-end="url(#ah-hi)"/>
-              <path class="edge edge--loop flow flow--slow" d="M490 300C490 236 700 250 720 211" marker-end="url(#ah-hi)"/>
-              <text class="edge__label" x="818" y="258">metrics</text>
-              <text class="edge__label" x="612" y="324">alert</text>
-              <text class="edge__label" x="606" y="274">rolling restart</text>
-
-              <!-- nodes -->
-              <g class="node"><rect x="20" y="128" width="120" height="64" rx="8"/><text class="node__t" x="80" y="157">Users</text><text class="node__s" x="80" y="175">HTTPS</text></g>
-              <g class="node"><rect x="180" y="128" width="120" height="64" rx="8"/><text class="node__t" x="240" y="157">DNS</text><text class="node__s" x="240" y="175">domain · records</text></g>
-              <g class="node"><rect x="340" y="128" width="130" height="64" rx="8"/><text class="node__t" x="405" y="157">Nginx</text><text class="node__s" x="405" y="175">reverse proxy</text></g>
-              <g class="node"><rect x="510" y="128" width="130" height="64" rx="8"/><text class="node__t" x="575" y="157">EC2</text><text class="node__s" x="575" y="175">Elastic IP · Linux</text></g>
-              <g class="node node--key"><rect x="680" y="112" width="170" height="96" rx="8"/><text class="node__t" x="765" y="146">Kubernetes</text><text class="node__s" x="765" y="164">pods · deployments</text>
-                <g class="pods"><rect x="728" y="178" width="18" height="14" rx="2"/><rect x="756" y="178" width="18" height="14" rx="2"/><rect x="784" y="178" width="18" height="14" rx="2"/></g></g>
-              <g class="node"><rect x="900" y="64" width="150" height="64" rx="8"/><text class="node__t" x="975" y="93">EBS</text><text class="node__s" x="975" y="111">persistent volumes</text></g>
-              <g class="node"><rect x="900" y="194" width="150" height="64" rx="8"/><text class="node__t" x="975" y="223">S3</text><text class="node__s" x="975" y="241">object storage</text></g>
-              <g class="node"><rect x="660" y="300" width="210" height="64" rx="8"/><text class="node__t" x="765" y="329">CloudWatch · Prometheus</text><text class="node__s" x="765" y="347">telemetry</text></g>
-              <g class="node node--key"><rect x="380" y="300" width="220" height="64" rx="8"/><text class="node__t" x="490" y="329">OpsMind</text><text class="node__s" x="490" y="347">Llama-3 · 2-stage guardrails</text></g>
-            </svg>
-          </div>
-        </figure>
-
-        <figure class="diagram reveal">
-          <figcaption class="diagram__head">
-            <span class="diagram__title">CI/CD Pipeline</span>
-            <span class="diagram__meta mono">commit to production · zero downtime</span>
-          </figcaption>
-          <ol class="pipeline">
-            <li class="stage" style="--i:0"><span class="stage__rail"></span><span class="stage__n mono">01</span><span class="stage__t">git push</span><span class="stage__s mono">main branch</span></li>
-            <li class="stage" style="--i:1"><span class="stage__rail"></span><span class="stage__n mono">02</span><span class="stage__t">GitHub Actions</span><span class="stage__s mono">workflow runs</span></li>
-            <li class="stage" style="--i:2"><span class="stage__rail"></span><span class="stage__n mono">03</span><span class="stage__t">Tests</span><span class="stage__s mono">lint · unit</span></li>
-            <li class="stage" style="--i:3"><span class="stage__rail"></span><span class="stage__n mono">04</span><span class="stage__t">Docker build</span><span class="stage__s mono">multi-stage image</span></li>
-            <li class="stage" style="--i:4"><span class="stage__rail"></span><span class="stage__n mono">05</span><span class="stage__t">Terraform</span><span class="stage__s mono">plan · apply</span></li>
-            <li class="stage" style="--i:5"><span class="stage__rail"></span><span class="stage__n mono">06</span><span class="stage__t">K8s deploy</span><span class="stage__s mono">rolling update</span></li>
-            <li class="stage" style="--i:6"><span class="stage__rail"></span><span class="stage__n mono">07</span><span class="stage__t">Health check</span><span class="stage__s mono">readiness probes</span></li>
-            <li class="stage stage--live" style="--i:7"><span class="stage__rail"></span><span class="stage__n mono">08</span><span class="stage__t"><span class="dot"></span> Live</span><span class="stage__s mono">99.99% uptime</span></li>
-          </ol>
-        </figure>
-      </div>
-    </section>
-
     <!-- PROJECTS -->
     <section class="section" id="projects">
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow mono">Featured projects</p>
-          <h2 class="section__title">Things I've <span class="muted">built &amp; shipped</span></h2>
+          <h2 class="section__title split">Things I've <span class="muted">built &amp; shipped</span></h2>
         </div>
 
         <div class="projects">
-          <article class="project project--featured reveal">
+          <article class="project project--featured glow reveal">
             <div class="project__main">
               <div class="project__top">
                 <span class="project__idx mono">01</span>
@@ -312,7 +422,7 @@
               </ul>
               <div class="project__links">
                 <a href="https://github.com/Rodevops07/OpsMind" target="_blank" rel="noopener" class="btn btn--ghost btn--sm"><svg class="ic"><use href="#i-github"/></svg> GitHub</a>
-                <a href="http://44.210.213.12:3000" target="_blank" rel="noopener" class="btn btn--primary btn--sm">Live Cloud App <svg class="ic"><use href="#i-external"/></svg></a>
+                <a href="http://44.210.213.12:3000" target="_blank" rel="noopener" class="btn btn--primary btn--sm" data-magnetic>Live Cloud App <svg class="ic"><use href="#i-external"/></svg></a>
               </div>
             </div>
             <div class="impact">
@@ -327,7 +437,7 @@
             </div>
           </article>
 
-          <article class="project reveal">
+          <article class="project glow reveal">
             <div class="project__top">
               <span class="project__idx mono">02</span>
             </div>
@@ -342,7 +452,7 @@
             </div>
           </article>
 
-          <article class="project reveal">
+          <article class="project glow reveal">
             <div class="project__top">
               <span class="project__idx mono">03</span>
             </div>
@@ -365,21 +475,24 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow mono">Get in touch</p>
-          <h2 class="section__title">Let's build scalable, resilient <span class="muted">infrastructure together.</span></h2>
+          <h2 class="section__title section__title--xl split">Let's build scalable, resilient <span class="muted">infrastructure together.</span></h2>
         </div>
         <div class="contact">
           <div class="contact__info reveal">
             <p class="contact__text">Currently open to <strong>Cloud Engineer</strong>, <strong>DevOps Engineer</strong>, and <strong>Site Reliability Engineer (SRE)</strong> roles. Feel free to reach out!</p>
-            <a href="mailto:rohitpujari2407@gmail.com" class="contact__email mono"><svg class="ic"><use href="#i-mail"/></svg> rohitpujari2407@gmail.com</a>
+            <div class="contact__emailrow">
+              <a href="mailto:rohitpujari2407@gmail.com" class="contact__email mono"><svg class="ic"><use href="#i-mail"/></svg> rohitpujari2407@gmail.com</a>
+              <button type="button" class="copy mono" id="copyEmail" aria-label="Copy email address"><svg class="ic"><use href="#i-copy"/></svg><span>copy</span></button>
+            </div>
             <p class="contact__loc"><svg class="ic"><use href="#i-pin"/></svg> Palghar / Mumbai, Maharashtra, India</p>
             <div class="socials">
-              <a href="https://github.com/Rodevops07" target="_blank" rel="noopener" class="social" aria-label="GitHub"><svg class="ic"><use href="#i-github"/></svg></a>
-              <a href="https://www.linkedin.com/in/rohit-pujari-149723273" target="_blank" rel="noopener" class="social" aria-label="LinkedIn"><svg class="ic"><use href="#i-linkedin"/></svg></a>
-              <a href="mailto:rohitpujari2407@gmail.com" class="social" aria-label="Email"><svg class="ic"><use href="#i-mail"/></svg></a>
+              <a href="https://github.com/Rodevops07" target="_blank" rel="noopener" class="social" aria-label="GitHub" data-magnetic><svg class="ic"><use href="#i-github"/></svg></a>
+              <a href="https://www.linkedin.com/in/rohit-pujari-149723273" target="_blank" rel="noopener" class="social" aria-label="LinkedIn" data-magnetic><svg class="ic"><use href="#i-linkedin"/></svg></a>
+              <a href="mailto:rohitpujari2407@gmail.com" class="social" aria-label="Email" data-magnetic><svg class="ic"><use href="#i-mail"/></svg></a>
             </div>
           </div>
 
-          <form class="form reveal" id="contactForm" novalidate>
+          <form class="form glow reveal" id="contactForm" novalidate>
             <div class="field">
               <label for="name" class="mono">Name</label>
               <input id="name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
@@ -403,6 +516,7 @@
   <footer class="footer">
     <div class="container footer__inner">
       <p class="mono">© <span id="year"></span> Rohit Pujari · built with HTML/CSS/JS · deployed with zero downtime</p>
+      <p class="footer__hint mono">press <kbd>Ctrl K</kbd> to navigate</p>
       <div class="socials socials--sm">
         <a href="https://github.com/Rodevops07" target="_blank" rel="noopener" class="social" aria-label="GitHub"><svg class="ic"><use href="#i-github"/></svg></a>
         <a href="https://www.linkedin.com/in/rohit-pujari-149723273" target="_blank" rel="noopener" class="social" aria-label="LinkedIn"><svg class="ic"><use href="#i-linkedin"/></svg></a>
@@ -411,8 +525,22 @@
     </div>
   </footer>
 
+  <!-- COMMAND PALETTE -->
+  <div class="palette" id="palette" hidden>
+    <div class="palette__backdrop" data-palette-close></div>
+    <div class="palette__box" role="dialog" aria-modal="true" aria-label="Command palette">
+      <div class="palette__input">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input id="paletteInput" type="text" placeholder="Jump to a section, or ask Ro's AI anything…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list" />
+        <kbd>esc</kbd>
+      </div>
+      <ul class="palette__list" id="paletteList" role="listbox" aria-label="Commands"></ul>
+      <div class="palette__foot mono"><span>↑↓ navigate</span><span>↵ select</span><span>esc close</span></div>
+    </div>
+  </div>
+
   <!-- AI ASSISTANT -->
-  <button class="ai-fab" id="aiFab" type="button" aria-label="Chat with Ro's AI assistant" aria-controls="aiPanel" aria-expanded="false">
+  <button class="ai-fab" id="aiFab" type="button" aria-label="Chat with Ro's AI assistant" aria-controls="aiPanel" aria-expanded="false" data-magnetic>
     <svg class="ic"><use href="#i-spark"/></svg>
     <span class="ai-fab__label">Ask Ro's AI</span>
   </button>
