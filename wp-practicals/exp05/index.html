@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookShelf</title>
+<style>
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #f4f6f8; color: #1f2933; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 22px; }
+  h1 { margin: 0 0 12px; font-size: 22px; color: #1d4ed8; }
+  .bar { display: flex; gap: 10px; }
+  input, select { font: inherit; padding: 9px 12px; border: 1px solid #cbd2d9; border-radius: 8px; }
+  input { flex: 1; }
+  .chips { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid #cbd2d9; background: #fff; border-radius: 999px; padding: 3px 12px;
+          font-size: 13px; cursor: pointer; }
+  .chip.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+  #count { color: #52606d; font-size: 13px; margin-bottom: 8px; }
+  ul { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #e4e7eb; border-radius: 10px; }
+  li { display: flex; justify-content: space-between; padding: 10px 14px; border-top: 1px solid #eef1f4; }
+  li:first-child { border-top: 0; }
+  .title { font-weight: 600; }
+  .by { color: #52606d; font-size: 13px; }
+  .right { text-align: right; font-size: 13px; color: #52606d; }
+  mark { background: #fde68a; color: inherit; border-radius: 2px; }
+  .empty { padding: 18px; text-align: center; color: #7b8794; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BookShelf - college library catalogue</h1>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search title or author, e.g. 'rowling harry'" autocomplete="off">
+    <select id="sort">
+      <option value="title">Sort: Title A-Z</option>
+      <option value="year">Sort: Newest first</option>
+      <option value="rating">Sort: Top rated</option>
+    </select>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="count"></div>
+  <ul id="results"></ul>
+</div>
+<script>
+  const books = [
+    { title: 'The Alchemist', author: 'Paulo Coelho', genre: 'Fiction', year: 1988, rating: 4.1 },
+    { title: 'Wings of Fire', author: 'A. P. J. Abdul Kalam', genre: 'Biography', year: 1999, rating: 4.6 },
+    { title: 'Clean Code', author: 'Robert C. Martin', genre: 'Programming', year: 2008, rating: 4.4 },
+    { title: 'The Pragmatic Programmer', author: 'Andrew Hunt', genre: 'Programming', year: 1999, rating: 4.3 },
+    { title: 'Harry Potter and the Philosopher\'s Stone', author: 'J. K. Rowling', genre: 'Fantasy', year: 1997, rating: 4.5 },
+    { title: 'Harry Potter and the Chamber of Secrets', author: 'J. K. Rowling', genre: 'Fantasy', year: 1998, rating: 4.4 },
+    { title: 'The Hobbit', author: 'J. R. R. Tolkien', genre: 'Fantasy', year: 1937, rating: 4.3 },
+    { title: 'Sapiens', author: 'Yuval Noah Harari', genre: 'History', year: 2011, rating: 4.4 },
+    { title: 'The Discovery of India', author: 'Jawaharlal Nehru', genre: 'History', year: 1946, rating: 4.2 },
+    { title: 'Atomic Habits', author: 'James Clear', genre: 'Self-help', year: 2018, rating: 4.4 },
+    { title: 'Ikigai', author: 'Hector Garcia', genre: 'Self-help', year: 2016, rating: 3.9 },
+    { title: 'The White Tiger', author: 'Aravind Adiga', genre: 'Fiction', year: 2008, rating: 3.8 },
+    { title: 'Five Point Someone', author: 'Chetan Bhagat', genre: 'Fiction', year: 2004, rating: 3.5 },
+    { title: 'Eloquent JavaScript', author: 'Marijn Haverbeke', genre: 'Programming', year: 2011, rating: 4.2 },
+    { title: 'You Don\'t Know JS Yet', author: 'Kyle Simpson', genre: 'Programming', year: 2020, rating: 4.3 },
+    { title: 'Steve Jobs', author: 'Walter Isaacson', genre: 'Biography', year: 2011, rating: 4.2 },
+    { title: 'The Story of My Experiments with Truth', author: 'M. K. Gandhi', genre: 'Biography', year: 1927, rating: 4.1 },
+    { title: 'A Brief History of Time', author: 'Stephen Hawking', genre: 'Science', year: 1988, rating: 4.2 },
+    { title: 'The Selfish Gene', author: 'Richard Dawkins', genre: 'Science', year: 1976, rating: 4.1 },
+    { title: 'Mahabharata Retold', author: 'C. Rajagopalachari', genre: 'History', year: 1951, rating: 4.3 }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const state = { q: params.get('q') || '', genre: params.get('genre') || 'All', sort: params.get('sort') || 'title' };
+  const genres = ['All', ...new Set(books.map(b => b.genre))].sort((a, b) => a === 'All' ? -1 : a.localeCompare(b));
+
+  const escapeHtml = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const escapeRegex = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  function highlight(text, words) {
+    const safe = escapeHtml(text);
+    if (!words.length) return safe;
+    const re = new RegExp('(' + words.map(w => escapeRegex(escapeHtml(w))).join('|') + ')', 'gi');
+    return safe.replace(re, '<mark>$1</mark>');
+  }
+
+  const sorters = {
+    title: (a, b) => a.title.localeCompare(b.title),
+    year: (a, b) => b.year - a.year,
+    rating: (a, b) => b.rating - a.rating || a.title.localeCompare(b.title)
+  };
+
+  function render() {
+    const words = state.q.toLowerCase().split(/\s+/).filter(Boolean);        // "rowling harry" -> 2 words
+    const list = books
+      .filter(b => state.genre === 'All' || b.genre === state.genre)
+      .filter(b => words.every(w => (b.title + ' ' + b.author).toLowerCase().includes(w)))
+      .slice().sort(sorters[state.sort]);
+
+    $('count').textContent = `Showing ${list.length} of ${books.length} books` +
+      (list.length ? ` - average rating ${(list.reduce((s, b) => s + b.rating, 0) / list.length).toFixed(2)}` : '');
+    $('results').innerHTML = list.length ? list.map(b => `
+      <li><div><div class="title">${highlight(b.title, words)}</div>
+      <div class="by">${highlight(b.author, words)}</div></div>
+      <div class="right">${b.genre}<br>${b.year} &middot; &#9733; ${b.rating}</div></li>`).join('')
+      : `<li class="empty">No books match "${escapeHtml(state.q)}" in ${state.genre}. Try fewer words.</li>`;
+    $('chips').innerHTML = genres.map(g =>
+      `<button class="chip${g === state.genre ? ' on' : ''}" data-genre="${g}">${g} (${g === 'All' ? books.length : books.filter(b => b.genre === g).length})</button>`).join('');
+
+    const p = new URLSearchParams();
+    if (state.q) p.set('q', state.q);
+    if (state.genre !== 'All') p.set('genre', state.genre);
+    if (state.sort !== 'title') p.set('sort', state.sort);
+    history.replaceState(null, '', p.toString() ? '?' + p : location.pathname);   // shareable URL
+  }
+
+  $('q').value = state.q;
+  $('sort').value = state.sort;
+  $('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+  $('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  $('chips').addEventListener('click', e => {
+    if (e.target.dataset.genre) { state.genre = e.target.dataset.genre; render(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); }
+    if (e.key === 'Escape') { $('q').value = state.q = ''; render(); }
+  });
+  render();
+</script>
+</body>
+</html>

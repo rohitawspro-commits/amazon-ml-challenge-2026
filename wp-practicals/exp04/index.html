@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>RecipeBox</title>
+<script>
+  // Runs before the page is painted, so a saved dark theme never flashes white.
+  (function () {
+    var mode = 'system';
+    try { mode = localStorage.getItem('recipebox-theme') || 'system'; } catch (e) {}
+    var dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  })();
+</script>
+<style>
+  :root {
+    --bg: #fbf7f1;  --surface: #ffffff; --text: #2b2118; --muted: #7a6a5c;
+    --accent: #b4450c; --accent-soft: #fde8d7; --border: #e8dccd;
+    --shadow: 0 2px 10px rgb(60 30 0 / .08);
+    --radius: 12px; --gap: 16px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #15120f;  --surface: #211c17; --text: #f2ebe3; --muted: #b0a193;
+    --accent: #fb923c; --accent-soft: #3b2616; --border: #3a3129;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 system-ui, sans-serif; background: var(--bg); color: var(--text);
+         transition: background-color .25s, color .25s; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px;
+           background: var(--surface); border-bottom: 1px solid var(--border); }
+  h1 { margin: 0; font-size: 22px; color: var(--accent); }
+  .switch { display: flex; border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+  .switch button { border: 0; background: none; color: var(--muted); padding: 6px 14px; border-radius: 999px;
+                   font: inherit; font-size: 13px; cursor: pointer; }
+  .switch button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 28px; display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--gap); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+          box-shadow: var(--shadow); padding: 16px; }
+  .card h2 { margin: 0 0 4px; font-size: 17px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tag { display: inline-block; margin-top: 10px; padding: 2px 10px; border-radius: 999px;
+         background: var(--accent-soft); color: var(--accent); font-size: 12px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding-bottom: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>RecipeBox</h1>
+  <div class="switch" role="group" aria-label="Colour theme">
+    <button data-mode="light">Light</button>
+    <button data-mode="dark">Dark</button>
+    <button data-mode="system">System</button>
+  </div>
+</header>
+<main id="list"></main>
+<footer id="status"></footer>
+<script>
+  const recipes = [
+    ['Masala Oats Upma', '15 min', 'Breakfast'], ['Paneer Butter Masala', '40 min', 'Main course'],
+    ['Lemon Rice', '20 min', 'Main course'],     ['Sabudana Khichdi', '25 min', 'Breakfast'],
+    ['Mango Lassi', '5 min', 'Drinks'],          ['Gajar Halwa', '50 min', 'Dessert']
+  ];
+  document.getElementById('list').innerHTML = recipes.map(([name, time, type]) =>
+    `<article class="card"><h2>${name}</h2><div class="meta">Ready in ${time}</div>
+     <span class="tag">${type}</span></article>`).join('');
+
+  const KEY = 'recipebox-theme';
+  const root = document.documentElement;
+  const osDark = matchMedia('(prefers-color-scheme: dark)');
+  const buttons = document.querySelectorAll('.switch button');
+  const status = document.getElementById('status');
+
+  function readMode() {
+    try { return localStorage.getItem(KEY) || 'system'; } catch (e) { return 'system'; }
+  }
+
+  function render(mode) {
+    const theme = mode === 'system' ? (osDark.matches ? 'dark' : 'light') : mode;
+    root.dataset.theme = theme;                       // CSS switches variable set
+    buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    const accent = getComputedStyle(root).getPropertyValue('--accent').trim();
+    status.textContent = `mode: ${mode} | applied theme: ${theme} | --accent = ${accent}`;
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => {
+    try { localStorage.setItem(KEY, b.dataset.mode); } catch (e) {}
+    render(b.dataset.mode);
+  }));
+  // When the user follows the OS setting, react to the OS changing while the page is open.
+  osDark.addEventListener('change', () => { if (readMode() === 'system') render('system'); });
+  render(readMode());
+</script>
+</body>
+</html>
