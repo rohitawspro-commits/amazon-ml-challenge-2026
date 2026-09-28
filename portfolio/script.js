@@ -193,7 +193,7 @@
     const subject = encodeURIComponent(`Portfolio contact from ${data.name.trim()}`);
     const body = encodeURIComponent(`${data.message.trim()}\n\n— ${data.name.trim()} (${data.email.trim()})`);
     window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
-    status.textContent = "✔ opening your mail client… thanks for reaching out!";
+    status.textContent = "✔ opening your mail app… if nothing opens, email rohitpujari2407@gmail.com directly.";
     status.classList.add("is-ok");
     form.reset();
   });
