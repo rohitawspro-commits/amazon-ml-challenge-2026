@@ -8,12 +8,12 @@ doc = Document()
 st = doc.styles["Normal"]
 st.font.name = "Times New Roman"
 st.element.rPr.rFonts.set(qn("w:eastAsia"), "Times New Roman")
-st.font.size = Pt(12)
+st.font.size = Pt(11.5)
 st.paragraph_format.space_after = Pt(0)
-st.paragraph_format.line_spacing = 1.1
+st.paragraph_format.line_spacing = 1.0
 s = doc.sections[0]
 s.page_height, s.page_width = Inches(11.69), Inches(8.27)
-s.top_margin = s.bottom_margin = Inches(0.8)
+s.top_margin = s.bottom_margin = Inches(0.6)
 s.left_margin = s.right_margin = Inches(0.9)
 
 
@@ -68,7 +68,7 @@ para("To begin, the centre can be started on a small scale as a pilot, with 5 to
      "can also work together with the college's innovation or incubation cell, if one exists.", align=J, after=6)
 para("I humbly request you to consider this proposal and give me an opportunity to present a detailed plan "
      "at your convenience.", align=J, after=10)
-for line in ["Thanking you,", "Yours faithfully,", "", "", "(Signature)", "Rohit Pujari",
+for line in ["Thanking you,", "Yours faithfully,", "", "(Signature)", "Rohit Pujari",
              "B.E. Computer Engineering (Final Year), Roll No. 28"]:
     para(line)
 doc.save("Letter_to_Principal_Rohit_Pujari.docx")
