@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07070d">
+<meta property="og:title" content="Rohit Pujari · Software Engineer">
+<meta property="og:description" content="Software engineer building self-healing cloud systems: Python, Kubernetes, AWS and AI.">
+<meta property="og:image" content="/assets/rohit.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%235b74ff'/%3E%3Cstop offset='.5' stop-color='%23a274ff'/%3E%3Cstop offset='1' stop-color='%23ff6f91'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='16' fill='url(%23g)'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='12' font-weight='700' text-anchor='middle' fill='white'%3ERP%3C/text%3E%3C/svg%3E">
+<title>Rohit Pujari · Software Engineer</title>
+<meta name="description" content="Rohit Pujari: software engineer building self-healing cloud systems. Python and Node.js services, Kubernetes on AWS, CI/CD and AI-driven incident recovery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Layout: "aurora night". A live WebGL aurora (cobalt, violet, coral) flows behind a deep ink page.
+   Hero splits name (left) and a 3D constellation of the stack orbiting Rohit's photo (right).
+   Sections below are glass panels on the ink; each project carries its own aurora hue. */
+:root {
+  color-scheme: dark;
+  --bg: #07070d;
+  --bg-2: #0c0c16;
+  --panel: rgba(255, 255, 255, .035);
+  --panel-solid: #10101b;
+  --line: rgba(255, 255, 255, .08);
+  --line-2: rgba(255, 255, 255, .15);
+  --fg: #f3f4fb;
+  --muted: #a4a7c0;
+  --dim: #6c6f8a;
+  --c1: #5b74ff;
+  --c2: #a274ff;
+  --c3: #ff6f91;
+  --c4: #46e0d0;
+  --grad: linear-gradient(100deg, var(--c1), var(--c2) 48%, var(--c3));
+  --ok: #5ee0a0;
+
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --serif: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --r-lg: 28px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, p, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+h1, h2, h3, h4 { font-weight: 500; letter-spacing: -.035em; line-height: 1.05; text-wrap: balance; }
+em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.01em; }
+button, input, textarea { font: inherit; color: inherit; }
+::selection { background: var(--c2); color: #fff; }
+:focus-visible { outline: 2px solid var(--c2); outline-offset: 3px; border-radius: 8px; }
+.ic { width: 16px; height: 16px; flex: none; display: block; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { width: 100%; max-width: 1280px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+.grad-text { background: var(--grad); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: gshift 8s ease-in-out infinite; }
+@keyframes gshift { 50% { background-position: 100% 0; } }
+
+/* aurora canvas + grain */
+#aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: var(--au, 1); transition: opacity .8s var(--ease); }
+#aurora canvas { width: 100%; height: 100%; display: block; }
+.no-gl #aurora { background: radial-gradient(900px 600px at 80% 0%, rgba(91, 116, 255, .35), transparent 60%), radial-gradient(700px 500px at 10% 30%, rgba(162, 116, 255, .22), transparent 60%), radial-gradient(600px 500px at 60% 90%, rgba(255, 111, 145, .15), transparent 60%); }
+.page { position: relative; z-index: 1; }
+.grain-off {
+  content: ""; position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.status { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; display: inline-block; }
+.status::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ok); animation: ping 2.6s var(--ease) infinite; }
+@keyframes ping { 0% { transform: scale(.5); opacity: .8; } 100% { transform: scale(1.8); opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+/* glass */
+.glass { background: linear-gradient(180deg, rgba(24, 24, 42, .84), rgba(14, 14, 26, .84)); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+
+/* cursor */
+.cursor { position: fixed; left: 0; top: 0; z-index: 120; pointer-events: none; display: none; }
+.has-cursor .cursor { display: block; }
+.cursor__dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; mix-blend-mode: difference; transition: width .45s var(--ease), height .45s var(--ease), margin .45s var(--ease), background .3s; display: grid; place-items: center; }
+.cursor__dot span { font: 500 10.5px/1 var(--mono); color: #000; opacity: 0; transition: opacity .2s; letter-spacing: .08em; text-transform: uppercase; }
+.cursor.is-link .cursor__dot { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
+.cursor.is-label .cursor__dot { width: 84px; height: 84px; margin: -42px 0 0 -42px; mix-blend-mode: normal; background: #fff; }
+.cursor.is-label .cursor__dot span { opacity: 1; }
+
+/* buttons */
+.btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; padding: 0 26px; border-radius: 999px; border: 0; cursor: pointer; white-space: nowrap; font: 500 15px/1 var(--sans); letter-spacing: -.01em; transition: transform .5s var(--ease); }
+.btn:active { transform: scale(.98); }
+.btn--glow { color: #0a0a12; background: #fff; }
+.btn--glow::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--grad); opacity: 0; transition: opacity .45s; }
+.btn--glow:hover { color: #fff; }
+.btn--glow:hover::before { opacity: 1; }
+.btn--glow::after { content: ""; position: absolute; inset: -2px; z-index: -2; border-radius: inherit; background: var(--grad); filter: blur(16px); opacity: .55; }
+.btn--line { color: var(--fg); background: rgba(16, 16, 30, .72); border: 1px solid var(--line-2); }
+.btn--line:hover { background: rgba(255, 255, 255, .1); }
+.btn--sm { height: 42px; padding: 0 18px; font-size: 14px; }
+
+/* nav */
+.nav { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 70; display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.nav__bar { pointer-events: auto; display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px; max-width: 100%; background: rgba(12, 12, 22, .6); border: 1px solid var(--line); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+.nav__logo { display: inline-flex; align-items: center; gap: 10px; padding: 0 12px 0 4px; font-weight: 500; font-size: 14px; white-space: nowrap; }
+.av { width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center; overflow: hidden; background: var(--grad); color: #fff; font: 600 11px/1 var(--mono); }
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.nav__links { display: flex; align-items: center; gap: 2px; }
+.nav__links a { padding: 8px 13px; border-radius: 999px; font-size: 13.5px; color: var(--muted); transition: color .2s, background .2s; white-space: nowrap; }
+.nav__links a:hover { color: var(--fg); }
+.nav__links a.is-on { color: var(--fg); background: rgba(255, 255, 255, .08); }
+.nav__ai { position: relative; height: 36px; padding: 0 14px 0 11px; margin-left: 4px; border-radius: 999px; border: 0; background: var(--grad); color: #fff; font: 500 13.5px/1 var(--sans); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
+
+/* hero */
+.hero { position: relative; min-height: min(100dvh, 940px); display: grid; align-items: center; padding-block: 110px 56px; }
+.hero__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(16px, 3vw, 40px); align-items: center; }
+.hero__text { display: grid; gap: 24px; justify-items: start; }
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(16, 16, 30, .72); font: 400 12.5px/1.3 var(--mono); color: var(--muted); }
+.name { font: 600 clamp(3.6rem, 8.4vw, 8.4rem)/.88 var(--sans); letter-spacing: -.065em; perspective: 900px; }
+.name .l { display: block; white-space: nowrap; }
+.name .l2 { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.03em; font-size: 1.1em; padding-right: .1em; }
+.ch { display: inline-block; transform-origin: 50% 100%; will-change: transform; }
+.name .l2 .ch { background: var(--grad); background-size: 600% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.role { font: 400 clamp(1rem, 1.6vw, 1.2rem)/1.4 var(--mono); color: var(--muted); min-height: 1.4em; }
+.role b { font-weight: 500; }
+.role .caret { display: inline-block; width: 9px; height: 1.05em; vertical-align: text-bottom; margin-left: 3px; background: var(--grad); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.hero__lead { font-size: clamp(1.02rem, 1.4vw, 1.15rem); color: var(--muted); max-width: 42ch; }
+.hero__lead strong { color: var(--fg); font-weight: 500; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.stage { position: relative; width: 100%; max-width: 640px; aspect-ratio: 1; justify-self: end; touch-action: pan-y; cursor: grab; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage__hint { position: absolute; left: 50%; bottom: -28px; transform: translateX(-50%); font: 11.5px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; display: flex; align-items: center; gap: 10px; pointer-events: none; white-space: nowrap; }
+.stage__hint i { width: 22px; height: 1px; background: var(--dim); }
+.tip { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; min-width: 180px; max-width: 230px; padding: 11px 13px; border-radius: 14px; border: 1px solid var(--line-2); background: rgba(12, 12, 22, .9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); opacity: 0; transform: translate(-50%, calc(-100% - 18px)) scale(.96); transition: opacity .2s, transform .3s var(--ease); }
+.tip.is-on { opacity: 1; transform: translate(-50%, calc(-100% - 24px)) scale(1); }
+.tip b { display: block; font-weight: 500; font-size: 14px; }
+.tip span { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+.tip small { display: block; font: 10.5px/1 var(--mono); margin-top: 8px; text-transform: uppercase; letter-spacing: .08em; color: var(--c2); }
+.fallback { display: none; flex-wrap: wrap; justify-content: center; align-content: center; gap: 8px; height: 100%; }
+.no-gl .fallback { display: flex; }
+.fallback span { font: 13px/1 var(--mono); padding: 9px 12px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+.scrollcue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: grid; justify-items: center; gap: 8px; font: 10.5px/1 var(--mono); color: var(--dim); letter-spacing: .14em; text-transform: uppercase; }
+.scrollcue i { width: 1px; height: 38px; background: linear-gradient(var(--fg), transparent); transform-origin: top; animation: cue 2s var(--ease) infinite; }
+@keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* marquee */
+.band { position: relative; overflow: hidden; padding-block: 22px; border-block: 1px solid var(--line); background: rgba(7, 7, 13, .82); }
+.band__track { display: flex; width: max-content; will-change: transform; }
+.band__track ul { display: flex; align-items: center; gap: 40px; padding-right: 40px; }
+.band__track li { display: inline-flex; align-items: center; gap: 12px; font: 500 clamp(1.1rem, 1.8vw, 1.45rem)/1 var(--sans); letter-spacing: -.02em; color: var(--muted); white-space: nowrap; }
+.band__track li svg { width: 26px; height: 26px; }
+
+/* sections */
+.sec { padding-block: clamp(90px, 11vw, 140px); position: relative; }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px 48px; flex-wrap: wrap; margin-bottom: clamp(36px, 5vw, 60px); }
+.kicker { display: inline-flex; align-items: center; gap: 10px; font: 12px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 18px; }
+.kicker::before { content: ""; width: 24px; height: 2px; border-radius: 2px; background: var(--grad); }
+.title { font-size: clamp(2.3rem, 5.2vw, 4.4rem); letter-spacing: -.055em; line-height: .98; }
+.title em { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .08em; }
+.gsap-on .title em { background: none; color: inherit; padding-right: 0; }
+.gsap-on .title em .w > span { background: var(--grad); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .06em; }
+.head p { color: var(--muted); max-width: 38ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips li { font: 11.5px/1 var(--mono); padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); background: rgba(255, 255, 255, .03); }
+
+/* about */
+.about { display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+.portrait { --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 30%; position: relative; aspect-ratio: 3 / 4; width: 100%; max-width: 460px; border-radius: 34px; overflow: hidden; transform: perspective(1100px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .6s var(--ease); background: var(--panel-solid); border: 1px solid var(--line-2); justify-self: center; }
+.portrait.is-tilt { transition: transform .08s linear; }
+.portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait__mono { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 30% 20%, rgba(91, 116, 255, .55), transparent 55%), radial-gradient(circle at 80% 85%, rgba(255, 111, 145, .45), transparent 55%), radial-gradient(circle at 70% 30%, rgba(162, 116, 255, .4), transparent 55%), #0d0d18; }
+.portrait__mono span { font: 400 clamp(6rem, 14vw, 10rem)/1 var(--serif); font-style: italic; color: rgba(255, 255, 255, .92); letter-spacing: -.04em; }
+.portrait::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; background: radial-gradient(500px circle at var(--gx) var(--gy), rgba(255, 255, 255, .55), transparent 45%), linear-gradient(115deg, transparent 30%, rgba(162, 116, 255, .35) 45%, rgba(91, 116, 255, .3) 50%, rgba(255, 111, 145, .3) 55%, transparent 70%); background-size: 100% 100%, 250% 250%; background-position: 0 0, var(--gx) var(--gy); }
+.portrait__tag { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 18px; background: rgba(10, 10, 18, .6); border: 1px solid var(--line-2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 13.5px; }
+.portrait__tag small { font: 11px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.about__body { display: grid; gap: 26px; }
+.about__body p.lead { font-size: clamp(1.15rem, 1.8vw, 1.45rem); line-height: 1.5; letter-spacing: -.015em; color: var(--muted); max-width: 40ch; }
+.about__body p.lead strong { color: var(--fg); font-weight: 500; }
+.bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tile { padding: 22px; display: grid; gap: 8px; }
+.tile b { font: 500 clamp(2rem, 3.4vw, 2.8rem)/1 var(--sans); letter-spacing: -.06em; }
+.tile b small { font-size: .45em; color: var(--muted); margin-left: 2px; letter-spacing: 0; }
+.tile span { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+.tile:nth-child(1) b { color: #9fb0ff; } .tile:nth-child(2) b { color: #c9b0ff; } .tile:nth-child(3) b { color: #ffb0c3; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.facts span { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 14px; color: var(--muted); }
+
+/* projects: sticky stack */
+.stack { display: grid; gap: 28px; }
+.pcard { --hue: var(--c1); --mx: 50%; --my: 50%; position: sticky; top: calc(96px + var(--i) * 22px); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(20px, 4vw, 52px); padding: clamp(24px, 4vw, 50px); border-radius: 32px; overflow: hidden; min-height: min(560px, calc(100vh - 160px)); transform-origin: 50% 0; background: linear-gradient(160deg, #12121f, #0b0b14 60%); border: 1px solid var(--line-2); box-shadow: 0 -20px 60px -30px rgba(0, 0, 0, .9); }
+.pcard::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(700px 420px at 100% 0%, color-mix(in srgb, var(--hue) 38%, transparent), transparent 60%), radial-gradient(500px 400px at 0% 100%, color-mix(in srgb, var(--hue) 18%, transparent), transparent 60%); }
+.pcard::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(420px circle at var(--mx) var(--my), rgba(255, 255, 255, .08), transparent 60%); opacity: 0; transition: opacity .4s; }
+.pcard:hover::after { opacity: 1; }
+.pcard--b { --hue: var(--c2); } .pcard--c { --hue: var(--c3); } .pcard--d { --hue: var(--c4); } .pcard--e { --hue: #ffb35c; }
+.pcard__shade { position: absolute; inset: 0; z-index: 3; background: #07070d; opacity: 0; pointer-events: none; border-radius: inherit; }
+.stock { display: grid; gap: 8px; }
+.stock li { display: grid; grid-template-columns: minmax(0, 1fr) 120px 40px; gap: 12px; align-items: center; font-size: 13.5px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); transition: border-color .3s; }
+.stock .bar { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.stock .bar i { display: block; height: 100%; border-radius: inherit; background: var(--hue); transform-origin: left; transition: transform .8s var(--ease), background .3s; }
+.stock b { font: 500 12px/1 var(--mono); text-align: right; transition: color .3s; }
+.stock li.low { border-color: rgba(255, 111, 145, .55); }
+.stock li.low .bar i { background: var(--c3); }
+.stock li.low b { color: var(--c3); }
+.aq svg { width: 100%; height: auto; display: block; overflow: visible; }
+.aq .grid line { stroke: rgba(255, 255, 255, .07); }
+.aq .grid text { fill: var(--dim); font: 9px var(--mono); }
+.aq path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke-dashoffset 2.2s var(--ease); }
+.aq .act { stroke: #e9e9f4; }
+.aq .pred { stroke: var(--hue); }
+.aq .area { fill: color-mix(in srgb, var(--hue) 14%, transparent); stroke: none; }
+.aq .k { display: flex; gap: 16px; margin-top: 10px; font: 11px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.aq .k i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 6px; background: #e9e9f4; }
+.aq .k i.p { background: var(--hue); }
+.pcard__body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.pcard__top { display: flex; justify-content: space-between; align-items: center; gap: 10px; font: 12px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.pcard__idx { font: 400 clamp(3.6rem, 7vw, 6rem)/.8 var(--serif); font-style: italic; color: color-mix(in srgb, var(--hue) 70%, #fff); }
+.pcard h3 { font-size: clamp(2rem, 3.8vw, 3.2rem); letter-spacing: -.05em; line-height: 1; }
+.pcard p { color: var(--muted); max-width: 44ch; font-size: 15.5px; }
+.pcard__links { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; }
+.pcard__viz { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: clamp(18px, 2.4vw, 28px); border-radius: 24px; background: rgba(7, 7, 13, .62); border: 1px solid var(--line); min-width: 0; }
+.metric { display: grid; gap: 6px; }
+.metric small { font: 11.5px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.metric b { font: 500 clamp(3rem, 6vw, 4.8rem)/.9 var(--sans); letter-spacing: -.065em; color: color-mix(in srgb, var(--hue) 55%, #fff); }
+.metric s { font: 400 1rem/1 var(--mono); color: var(--dim); margin-right: 10px; letter-spacing: 0; }
+.metric span { font-size: 13.5px; color: var(--muted); }
+.loop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.loop li { display: grid; gap: 8px; padding: 12px 10px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); font-size: 13px; transition: border-color .35s, background .35s; min-width: 0; }
+.loop li i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: normal 11px/1 var(--mono); color: var(--dim); border: 1px solid var(--line-2); transition: all .35s; }
+.loop li small { font: 10.5px/1.3 var(--mono); color: var(--dim); }
+.loop li.is-on { border-color: color-mix(in srgb, var(--hue) 60%, transparent); background: color-mix(in srgb, var(--hue) 12%, transparent); }
+.loop li.is-on i, .loop li.is-done i { background: var(--hue); border-color: var(--hue); color: #fff; }
+.flow { display: grid; gap: 6px; }
+.flow li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); font-size: 13.5px; transition: border-color .3s; }
+.flow li i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line-2); transition: background .3s, border-color .3s; }
+.flow li small { font: 11px/1 var(--mono); color: var(--dim); }
+.flow li.is-done i { background: var(--hue); border-color: var(--hue); }
+.flow li.is-run { border-color: color-mix(in srgb, var(--hue) 60%, transparent); }
+.flow li.is-run i { border-color: var(--hue); border-top-color: transparent; animation: spin .8s linear infinite; }
+.bars { display: grid; gap: 14px; }
+.bars div { display: grid; gap: 8px; }
+.bars div p { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.bars div p b { font: 500 12.5px/1 var(--mono); color: var(--fg); }
+.bars .track { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); overflow: hidden; }
+.bars .track i { display: block; height: 100%; border-radius: inherit; background: repeating-linear-gradient(-45deg, var(--c3) 0 6px, #ff9bb2 6px 12px); transform-origin: left; transform: scaleX(var(--v, 0)); transition: transform 1.4s var(--ease); }
+.bars .track i.cap { background: var(--ok); }
+
+/* skills */
+.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 999px; width: fit-content; max-width: 100%; }
+.seg button { padding: 10px 17px; border-radius: 999px; border: 0; background: none; color: var(--muted); font-size: 14px; cursor: pointer; white-space: nowrap; transition: color .2s, background .3s; }
+.seg button:hover { color: var(--fg); }
+.seg button[aria-selected="true"] { background: var(--grad); color: #fff; }
+.skillpanel { margin-top: 18px; padding: clamp(22px, 3.5vw, 44px); display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 24px clamp(24px, 5vw, 64px); align-items: start; }
+.skillpanel h3 { font-size: clamp(1.8rem, 3vw, 2.6rem); letter-spacing: -.05em; }
+.skillpanel .proof { margin-top: 12px; color: var(--muted); max-width: 38ch; }
+.skilllist { display: flex; flex-wrap: wrap; gap: 8px; align-content: start; }
+.skilllist li { position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--line-2); font-size: 15px; color: var(--muted); animation: rise .5s var(--ease) both; animation-delay: calc(var(--i) * 40ms); }
+.skilllist li.core { color: var(--fg); border-color: transparent; background: linear-gradient(var(--panel-solid), var(--panel-solid)) padding-box, var(--grad) border-box; border: 1px solid transparent; }
+.legend { grid-column: 1 / -1; display: flex; gap: 18px; font: 11.5px/1 var(--mono); color: var(--dim); padding-top: 18px; border-top: 1px solid var(--line); text-transform: uppercase; letter-spacing: .06em; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { width: 12px; height: 12px; border-radius: 4px; background: var(--grad); }
+.legend i.w { background: transparent; border: 1px solid var(--line-2); }
+
+/* AI section */
+.ai { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(24px, 5vw, 72px); align-items: start; }
+.ai__intro { display: grid; gap: 26px; position: sticky; top: 110px; }
+.steps3 { display: grid; gap: 10px; }
+.steps3 li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; color: var(--muted); }
+.steps3 li span { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font: 12px/1 var(--mono); color: #fff; background: rgba(255, 255, 255, .06); border: 1px solid var(--line-2); }
+.ai__chatcta { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; cursor: pointer; text-align: left; width: 100%; }
+.ai__chatcta:hover { border-color: var(--line-2); }
+.ai__chatcta b { display: block; font-weight: 500; }
+.ai__chatcta small { color: var(--muted); font-size: 13.5px; }
+.fit__main { display: grid; gap: 14px; min-width: 0; }
+.jd { overflow: hidden; }
+.jd:focus-within { border-color: rgba(162, 116, 255, .6); }
+.jd__top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 18px; border-bottom: 1px solid var(--line); font: 11.5px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.jd__top label { color: var(--muted); }
+.jd textarea { display: block; width: 100%; min-height: 160px; padding: 16px 18px; border: 0; background: transparent; color: var(--fg); font: 15px/1.6 var(--sans); resize: vertical; outline: none; }
+.jd textarea::placeholder { color: var(--dim); }
+.jd__actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.jd__actions .ghost { height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line-2); background: none; color: var(--muted); cursor: pointer; font-size: 13.5px; }
+.jd__actions .ghost:hover { color: var(--fg); }
+.jd__actions .btn { margin-left: auto; }
+.fit__err { font-size: 13.5px; color: var(--c3); min-height: 1.3em; }
+.fit__note { font: 11.5px/1.5 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
+.report { padding: clamp(20px, 3vw, 32px); display: grid; gap: 20px; min-width: 0; }
+.report__top { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 20px; align-items: center; }
+.ring { position: relative; width: 108px; height: 108px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .bg { stroke: rgba(255, 255, 255, .08); }
+.ring .fg { stroke: url(#ringGrad); stroke-linecap: round; transition: stroke-dashoffset 1.4s var(--ease); }
+.ring b { position: absolute; inset: 0; display: grid; place-items: center; font: 500 1.7rem/1 var(--sans); letter-spacing: -.05em; }
+.verdict { display: grid; gap: 6px; }
+.verdict h4 { font-size: 1.4rem; letter-spacing: -.035em; }
+.verdict p { color: var(--muted); font-size: 14.5px; }
+.rgroup { display: grid; gap: 10px; }
+.rgroup h5 { margin: 0; font: 400 11.5px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--dim); }
+.rchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rchips li { font: 12.5px/1 var(--mono); padding: 8px 11px; border-radius: 999px; border: 1px solid var(--line-2); animation: rise .45s var(--ease) both; animation-delay: calc(var(--i) * 30ms); }
+.rchips li.ok { border-color: rgba(94, 224, 160, .4); background: rgba(94, 224, 160, .08); }
+.rchips li.ok::before { content: "✓ "; color: var(--ok); }
+.rchips li.gap { color: var(--muted); border-style: dashed; }
+.why { display: grid; gap: 8px; }
+.why li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; font-size: 14.5px; color: var(--muted); }
+.why li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--grad); margin-top: 8px; }
+.why strong { color: var(--fg); font-weight: 500; }
+.skel { display: grid; gap: 12px; }
+.skel i { display: block; height: 14px; border-radius: 8px; background: linear-gradient(90deg, rgba(255, 255, 255, .05) 0%, rgba(162, 116, 255, .25) 50%, rgba(255, 255, 255, .05) 100%); background-size: 200% 100%; animation: shim 1.1s linear infinite; }
+@keyframes shim { to { background-position: -200% 0; } }
+
+/* contact */
+.contact { position: relative; overflow: hidden; padding: clamp(28px, 6vw, 80px); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; }
+.contact::before { content: ""; position: absolute; inset: -40%; z-index: -1; background: conic-gradient(from 0deg, rgba(91, 116, 255, .35), rgba(162, 116, 255, .3), rgba(255, 111, 145, .3), rgba(70, 224, 208, .2), rgba(91, 116, 255, .35)); filter: blur(80px); animation: spin 18s linear infinite; will-change: transform; }
+.contact .title { font-size: clamp(3rem, 9vw, 8rem); letter-spacing: -.07em; }
+.contact__info { display: grid; gap: 22px; grid-column: 1 / -1; }
+.contact__mail { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font: 400 clamp(1.3rem, 3.4vw, 2.6rem)/1.1 var(--sans); letter-spacing: -.04em; word-break: break-all; }
+.copy { height: 36px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, .05); color: var(--muted); font: 11.5px/1 var(--mono); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.copy:hover { color: var(--fg); }
+.contact__row { display: flex; flex-wrap: wrap; gap: 10px; }
+.badge { position: relative; width: clamp(130px, 14vw, 168px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #0a0a12; }
+.badge svg.rt { position: absolute; inset: 0; width: 100%; height: 100%; animation: spin 16s linear infinite; }
+.badge svg.rt text { font: 500 8.6px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: currentColor; }
+.badge .ic { width: 30px; height: 30px; transition: transform .5s var(--ease); }
+.badge:hover .ic { transform: rotate(-45deg) scale(1.1); }
+
+.mark { padding-block: clamp(70px, 9vw, 120px) 26px; overflow: hidden; }
+.mark__word { position: relative; font: 600 clamp(3rem, 12.6vw, 13rem)/.86 var(--sans); letter-spacing: -.075em; white-space: nowrap; user-select: none; }
+.mark__word .ghost { color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, .16); display: block; }
+.mark__word .fill { position: absolute; inset: 0; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; clip-path: inset(0 100% 0 0); }
+.mark__word em { font-weight: 400; letter-spacing: -.035em; }
+.mark__row { margin-top: 26px; display: flex; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; font: 11.5px/1.4 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+.mark__row a:hover { color: var(--fg); }
+
+/* chat */
+.fab { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 75; display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 22px 0 8px; border-radius: 999px; cursor: pointer; border: 1px solid var(--line-2); background: rgba(12, 12, 22, .85); color: var(--fg); font: 500 14.5px/1 var(--sans); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 20px 50px -18px rgba(0, 0, 0, .8), 0 0 40px -10px rgba(162, 116, 255, .5); transition: transform .5s var(--ease), opacity .3s; }
+.fab:hover { transform: translateY(-2px); }
+.orb { position: relative; width: 44px; height: 44px; border-radius: 50%; flex: none; background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c3), var(--c4), var(--c1)); animation: spin 4s linear infinite; }
+.orb::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #2a2a44, #0b0b16 70%); }
+.orb img, .orb .orb__m { position: absolute; inset: 4px; z-index: 1; width: calc(100% - 8px); height: calc(100% - 8px); border-radius: 50%; object-fit: cover; animation: spin 4s linear infinite reverse; }
+.orb .orb__m { display: grid; place-items: center; font: 600 12px/1 var(--mono); color: #fff; }
+.fab__txt { display: grid; gap: 3px; text-align: left; }
+.fab__txt small { font: 10.5px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.fab[aria-expanded="true"] { opacity: 0; pointer-events: none; transform: scale(.9); }
+.nudge { position: fixed; right: 18px; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); z-index: 75; max-width: 250px; padding: 12px 34px 12px 14px; border-radius: 18px 18px 4px 18px; background: #fff; color: #0a0a12; font-size: 14px; line-height: 1.45; box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .6); animation: pop .6s var(--ease); cursor: pointer; }
+.nudge button { position: absolute; right: 6px; top: 6px; width: 24px; height: 24px; border: 0; border-radius: 50%; background: none; cursor: pointer; font-size: 16px; color: #555; }
+.chat { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 80; width: min(410px, calc(100vw - 32px)); height: min(620px, calc(100dvh - 36px)); display: flex; flex-direction: column; overflow: hidden; border-radius: 28px; background: rgba(12, 12, 22, .92); border: 1px solid var(--line-2); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .9), 0 0 60px -20px rgba(162, 116, 255, .45); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); transform-origin: bottom right; animation: pop .5s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.95); } }
+.chat__head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.chat__head .orb { width: 38px; height: 38px; }
+.chat__meta { flex: 1; min-width: 0; }
+.chat__title { font-weight: 500; font-size: 15px; line-height: 1.3; }
+.chat__mode { font: 11px/1.4 var(--mono); color: var(--dim); display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: .05em; }
+.chat__x { background: none; border: 0; color: var(--muted); font-size: 24px; line-height: 1; padding: 4px 10px; border-radius: 10px; cursor: pointer; }
+.chat__x:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+.chat__log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
+.msg { max-width: 88%; padding: 11px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; white-space: pre-wrap; word-wrap: break-word; animation: rise .35s var(--ease) both; }
+.msg strong { color: #fff; font-weight: 600; }
+.msg--bot { align-self: flex-start; background: rgba(255, 255, 255, .06); border: 1px solid var(--line); color: #d7d9ea; border-bottom-left-radius: 6px; }
+.msg--me { align-self: flex-end; background: var(--grad); color: #fff; border-bottom-right-radius: 6px; }
+.msg--typing { display: inline-flex; gap: 5px; padding: 15px; }
+.msg--typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bob 1s infinite; }
+.msg--typing i:nth-child(2) { animation-delay: .15s; } .msg--typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes bob { 50% { transform: translateY(-4px); opacity: .4; } }
+.chat__chips { display: flex; gap: 6px; padding: 0 16px 12px; overflow-x: auto; scrollbar-width: none; }
+.chat__chips button { flex: none; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; }
+.chat__chips button:hover { color: #fff; }
+.chat__form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.chat__form input { flex: 1; min-width: 0; padding: 13px 16px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, .04); color: var(--fg); outline: none; font-size: 15px; }
+.chat__form input:focus { border-color: rgba(162, 116, 255, .6); }
+.chat__form button { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 0; background: var(--grad); color: #fff; display: grid; place-items: center; cursor: pointer; }
+
+/* loader */
+.loader { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: grid; grid-template-rows: 1fr auto; padding: clamp(20px, 4vw, 48px); padding-top: calc(clamp(20px, 4vw, 48px) + env(safe-area-inset-top, 0px)); }
+.loader__mark { align-self: center; justify-self: center; display: grid; justify-items: center; gap: 16px; overflow: hidden; }
+.loader__mark span { font: 400 clamp(3rem, 9vw, 6.5rem)/1.05 var(--serif); font-style: italic; display: block; padding: 0 .1em; }
+.loader__mark small { font: 11.5px/1 var(--mono); color: var(--dim); letter-spacing: .16em; text-transform: uppercase; }
+.loader__row { display: flex; align-items: flex-end; gap: 16px; }
+.loader__n { font: 300 clamp(3.6rem, 12vw, 9rem)/.8 var(--sans); letter-spacing: -.07em; font-variant-numeric: tabular-nums; }
+.loader__bar { flex: 1; height: 2px; background: var(--line); margin-bottom: 12px; position: relative; overflow: hidden; border-radius: 2px; }
+.loader__bar i { position: absolute; inset: 0; background: var(--grad); transform-origin: left; transform: scaleX(0); }
+
+/* motion helpers */
+.w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .12em .14em 0; margin: 0 -.12em -.14em 0; }
+.w > span { display: inline-block; will-change: transform; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+.js [data-reveal].pending { opacity: 0; transform: translateY(26px); }
+[data-reveal] { transition: opacity 1s var(--ease), transform 1s var(--ease); transition-delay: calc(var(--d, 0) * 90ms); }
+.gsap-on .hero [data-reveal] { transition: none; }
+
+@media (max-width: 960px) {
+  .nav__links { display: none; }
+  .hero { min-height: 0; padding-block: 96px 40px; }
+  .hero__grid, .about, .pcard, .ai, .skillpanel { grid-template-columns: minmax(0, 1fr); }
+  .stage { order: -1; max-width: 440px; justify-self: center; margin-block: -10px -20px; }
+  .name { font-size: clamp(3.6rem, 21vw, 7rem); }
+  .ai__intro { position: static; }
+  .pcard { position: relative; top: auto; min-height: 0; }
+  .scrollcue { display: none; }
+  .contact { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .loop { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stock li { grid-template-columns: minmax(0, 1fr) 72px 34px; }
+  .bento { grid-template-columns: minmax(0, 1fr); }
+  .report__top { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; }
+  .ring { width: 84px; height: 84px; }
+  .nav__logo span:last-child { display: none; }
+  .seg { border-radius: 22px; }
+  .fab__txt, .nudge, .stage__hint { display: none; }
+  .fab { padding: 0 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b74ff"/><stop offset=".5" stop-color="#a274ff"/><stop offset="1" stop-color="#ff6f91"/></linearGradient></defs>
+  <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></symbol>
+  <symbol id="i-linkedin" viewBox="0 0 24 24"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></symbol>
+  <symbol id="i-whatsapp" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3.3 4.4c-.2 0-.5 0-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3l-2-1c-.3-.1-.5-.2-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5.3-.5c.1-.2 0-.4 0-.5L9.6 8.6c-.2-.4-.4-.4-.6-.4h-.3Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-ne" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8 7h9v9"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 3.5l1.7 5 5 1.7-5 1.7-1.7 5-1.7-5-5-1.7 5-1.7 1.7-5Zm6.5 11 .7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M9 9h11v11H9zM5 15H4V4h11v1"/></symbol>
+</svg>
+
+<div class="loader" id="loader" aria-hidden="true" hidden>
+  <div class="loader__mark"><span class="grad-text">Rohit Pujari</span><small>Software · Cloud · Reliability</small></div>
+  <div class="loader__row"><span class="loader__n" id="loaderN">000</span><span class="loader__bar"><i id="loaderBar"></i></span></div>
+</div>
+<div id="aurora" aria-hidden="true"></div>
+<div class="cursor" aria-hidden="true"><div class="cursor__dot"><span id="cursorLabel">View</span></div></div>
+
+<header class="nav">
+  <div class="nav__bar">
+    <a href="#top" class="nav__logo" data-scr><span class="av">RP</span><span>Rohit Pujari</span></a>
+    <nav class="nav__links" id="navLinks" aria-label="Sections">
+      <a href="#about" data-scr>About</a>
+      <a href="#projects" data-scr>Projects</a>
+      <a href="#skills" data-scr>Skills</a>
+      <a href="#ai" data-scr>AI</a>
+      <a href="#contact" data-scr>Contact</a>
+    </nav>
+    <button class="nav__ai" type="button" data-chat><svg class="ic"><use href="#i-spark"/></svg>Ask AI</button>
+  </div>
+</header>
+
+<div class="page" id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero__grid">
+        <div class="hero__text">
+          <p class="pill" data-reveal><span class="status"></span>Available for work · Mumbai, IN</p>
+          <h1 class="name" aria-label="Rohit Pujari"><span class="l l1" aria-hidden="true">Rohit</span><span class="l l2" aria-hidden="true">Pujari</span></h1>
+          <p class="role" data-reveal aria-label="Software Engineer: Backend, Cloud, DevOps, SRE, AIOps"><span aria-hidden="true">Software Engineer / <b class="grad-text" id="roleWord">Cloud</b><span class="caret"></span></span></p>
+          <p class="hero__lead" data-reveal>I build <strong>self-healing cloud systems</strong> with Python, Kubernetes and AWS, and AI that fixes incidents in <strong>25.5 seconds</strong>.</p>
+          <div class="hero__cta" data-reveal>
+            <a href="#projects" class="btn btn--glow" data-mag data-scr>View projects <svg class="ic"><use href="#i-arrow"/></svg></a>
+            <button type="button" class="btn btn--line" data-mag data-chat><svg class="ic"><use href="#i-spark"/></svg> Ask my AI</button>
+          </div>
+        </div>
+        <div class="stage" id="stage" data-cursor="Drag" aria-label="Interactive 3D map of Rohit's tech stack orbiting his photo">
+          <div class="fallback"><span>AWS</span><span>Kubernetes</span><span>Docker</span><span>Terraform</span><span>Python</span><span>GitHub Actions</span><span>Linux</span><span>Prometheus</span><span>FastAPI</span><span>Node.js</span></div>
+          <div class="tip" id="tip"><b></b><span></span><small>Click to ask my AI</small></div>
+          <p class="stage__hint"><i></i>Drag to spin my stack<i></i></p>
+        </div>
+      </div>
+    </div>
+    <div class="scrollcue" aria-hidden="true"><i></i>Scroll</div>
+  </section>
+
+  <div class="band" aria-label="Technologies I use"><div class="band__track" id="band"></div></div>
+
+  <!-- ABOUT -->
+  <section class="sec" id="about">
+    <div class="wrap about">
+      <figure class="portrait" id="portrait" data-cursor="Hi!" data-reveal>
+        <div class="portrait__mono" id="portraitMono"><span>RP</span></div>
+        <figcaption class="portrait__tag"><span>Rohit Pujari</span><small>Software Engineer</small></figcaption>
+      </figure>
+      <div class="about__body">
+        <div><p class="kicker">About me</p><h2 class="title">I write the code <em>and keep it running.</em></h2></div>
+        <p class="lead" data-reveal>Software engineer with <strong>1+ year of hands-on experience</strong> shipping Python and Node.js services to <strong>Kubernetes on AWS</strong>, and building AI that keeps them healthy.</p>
+        <div class="bento" data-reveal>
+          <div class="glass tile"><b class="num" data-count>25.5<small>s</small></b><span>to heal a crashed service</span></div>
+          <div class="glass tile"><b class="num" data-count>99.99<small>%</small></b><span>uptime on AWS</span></div>
+          <div class="glass tile"><b class="num" data-count>20<small>+</small></b><span>chaos tests passed</span></div>
+        </div>
+        <div class="facts" data-reveal><span><span class="status"></span>Open to SDE · Cloud · DevOps · SRE</span><span>Palghar / Mumbai</span><span>Freelance projects welcome</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="sec" id="projects">
+    <div class="wrap">
+      <div class="head">
+        <div><p class="kicker">Projects</p><h2 class="title">Things I've <em>built.</em></h2></div>
+        <p>Five projects, from self-healing cloud platforms to machine learning.</p>
+      </div>
+      <div class="stack" id="stack">
+        <article class="pcard pcard--a" style="--i:0" data-cursor="Explore">
+          <div class="pcard__shade" aria-hidden="true"></div>
+          <div class="pcard__body">
+            <div class="pcard__top"><span>AIOps · Live on AWS</span><span class="status"></span></div>
+            <span class="pcard__idx">01</span>
+            <h3>OpsMind</h3>
+            <p>Deploys any repo to Kubernetes, breaks it on purpose with chaos tests, and heals it automatically. An LLM finds the cause; two safety checks approve every fix.</p>
+            <ul class="chips"><li>Kubernetes</li><li>AWS EC2</li><li>FastAPI</li><li>Next.js</li><li>Groq Llama-3</li></ul>
+            <div class="pcard__links">
+              <a class="btn btn--glow btn--sm" href="http://44.210.213.12:3000" target="_blank" rel="noopener">Live app <svg class="ic"><use href="#i-ne"/></svg></a>
+              <a class="btn btn--line btn--sm" href="https://github.com/Rodevops07/OpsMind" target="_blank" rel="noopener"><svg class="ic"><use href="#i-github"/></svg> Code</a>
+            </div>
+          </div>
+          <div class="pcard__viz">
+            <div class="metric"><small>Mean time to recovery</small><b class="num"><s>45 min</s>25.5s</b><span>98.6% faster than manual on-call.</span></div>
+            <ol class="loop" id="loop" aria-label="How OpsMind heals an incident">
+              <li><i>1</i>Detect<small>OOMKilled</small></li>
+              <li><i>2</i>Diagnose<small>LLM</small></li>
+              <li><i>3</i>Verify<small>2 guardrails</small></li>
+              <li><i>4</i>Heal<small>rolling restart</small></li>
+            </ol>
+          </div>
+        </article>
+        <article class="pcard pcard--b" style="--i:1" data-cursor="Explore">
+          <div class="pcard__shade" aria-hidden="true"></div>
+          <div class="pcard__body">
+            <div class="pcard__top"><span>CI/CD · AWS</span></div>
+            <span class="pcard__idx">02</span>
+            <h3>Deployment Pipeline</h3>
+            <p>Push-to-production on EC2 with multi-tenant GitHub OAuth, Nginx reverse-proxy routing to every service, and persistent EBS volumes.</p>
+            <ul class="chips"><li>Docker</li><li>Nginx</li><li>Bash</li><li>systemd</li><li>GitHub OAuth</li></ul>
+            <div class="pcard__links"><a class="btn btn--glow btn--sm" href="https://github.com/Rodevops07/automated-deployment" target="_blank" rel="noopener"><svg class="ic"><use href="#i-github"/></svg> Code</a></div>
+          </div>
+          <div class="pcard__viz">
+            <div class="metric"><small>Release flow</small><b>Push → Live</b><span>Zero-downtime rolling releases.</span></div>
+            <ol class="flow" id="flow">
+              <li><i></i>git push<small>main</small></li>
+              <li><i></i>Tests<small>lint · unit</small></li>
+              <li><i></i>Docker build<small>multi-stage</small></li>
+              <li><i></i>Terraform<small>plan · apply</small></li>
+              <li><i></i>Rollout<small>rolling</small></li>
+            </ol>
+          </div>
+        </article>
+        <article class="pcard pcard--c" style="--i:2" data-cursor="Explore">
+          <div class="pcard__shade" aria-hidden="true"></div>
+          <div class="pcard__body">
+            <div class="pcard__top"><span>Chaos engineering · Security</span></div>
+            <span class="pcard__idx">03</span>
+            <h3>Chaos Security Lab</h3>
+            <p>A 20-scenario attack engine: memory floods (exit 137), CPU throttling and resource exhaustion, measured against how fast the platform recovers.</p>
+            <ul class="chips"><li>Python</li><li>Linux cgroups</li><li>K8s API</li><li>Prometheus</li></ul>
+            <div class="pcard__links"><a class="btn btn--glow btn--sm" href="https://github.com/Rodevops07" target="_blank" rel="noopener"><svg class="ic"><use href="#i-github"/></svg> GitHub</a></div>
+          </div>
+          <div class="pcard__viz" id="barsBox">
+            <div class="metric"><small>Scenarios benchmarked</small><b class="num">20+</b><span>Memory attack, with and without the guardrail.</span></div>
+            <div class="bars">
+              <div><p>No limits <b>100 GB</b></p><span class="track"><i style="--v:0"></i></span></div>
+              <div><p>With guardrail <b>2 GB cap</b></p><span class="track"><i class="cap" style="--v:0"></i></span></div>
+            </div>
+          </div>
+        </article>
+        <article class="pcard pcard--d" style="--i:3" data-cursor="Explore">
+          <div class="pcard__shade" aria-hidden="true"></div>
+          <div class="pcard__body">
+            <div class="pcard__top"><span>Full-stack · Management system</span></div>
+            <span class="pcard__idx">04</span>
+            <h3>Grocery Management System</h3>
+            <p>Runs a grocery store's day to day: add and update products, track stock, record sales and generate bills, with low-stock alerts before shelves run empty.</p>
+            <ul class="chips"><li>Python</li><li>SQL database</li><li>CRUD</li><li>Billing</li></ul>
+            <div class="pcard__links"><a class="btn btn--glow btn--sm" href="https://github.com/Rodevops07" target="_blank" rel="noopener"><svg class="ic"><use href="#i-github"/></svg> GitHub</a></div>
+          </div>
+          <div class="pcard__viz">
+            <div class="metric"><small>Inventory · billing · alerts</small><b>All in one</b><span>Sample stock view: low items get flagged for restock.</span></div>
+            <ul class="stock" id="stock" aria-label="Sample stock levels">
+              <li><span>Rice 5 kg</span><span class="bar"><i></i></span><b>82</b></li>
+              <li><span>Milk 1 L</span><span class="bar"><i></i></span><b>64</b></li>
+              <li><span>Atta 10 kg</span><span class="bar"><i></i></span><b>47</b></li>
+              <li><span>Sugar 1 kg</span><span class="bar"><i></i></span><b>30</b></li>
+            </ul>
+          </div>
+        </article>
+        <article class="pcard pcard--e" style="--i:4" data-cursor="Explore">
+          <div class="pcard__shade" aria-hidden="true"></div>
+          <div class="pcard__body">
+            <div class="pcard__top"><span>Machine learning · Python</span></div>
+            <span class="pcard__idx">05</span>
+            <h3>Air Quality Prediction</h3>
+            <p>Predicts the air quality index (AQI) from pollutant and weather readings, so a city can see bad-air days coming before they arrive.</p>
+            <ul class="chips"><li>Python</li><li>Pandas</li><li>scikit-learn</li><li>Matplotlib</li></ul>
+            <div class="pcard__links"><a class="btn btn--glow btn--sm" href="https://github.com/Rodevops07" target="_blank" rel="noopener"><svg class="ic"><use href="#i-github"/></svg> GitHub</a></div>
+          </div>
+          <div class="pcard__viz">
+            <div class="metric"><small>AQI forecast</small><b>ML model</b><span>Sample chart: actual readings vs. the model's prediction.</span></div>
+            <div class="aq" id="aq"></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="sec" id="skills">
+    <div class="wrap">
+      <div class="head">
+        <div><p class="kicker">Skills</p><h2 class="title">Code to cloud, <em>end to end.</em></h2></div>
+        <p>Gradient-edged chips are my core skills.</p>
+      </div>
+      <div class="glass seg" role="tablist" aria-label="Skill areas" id="seg"></div>
+      <div class="glass skillpanel" role="tabpanel" id="skillPanel" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- AI -->
+  <section class="sec" id="ai">
+    <div class="wrap ai">
+      <div class="ai__intro">
+        <div><p class="kicker">AI tools for recruiters</p><h2 class="title">Paste your JD. <em>See my fit.</em></h2></div>
+        <ol class="steps3">
+          <li><span>01</span>Paste the job description.</li>
+          <li><span>02</span>Get a match score in seconds.</li>
+          <li><span>03</span>See matched skills and honest gaps.</li>
+        </ol>
+        <button type="button" class="glass ai__chatcta" data-chat><span class="orb" aria-hidden="true" data-orb></span><span><b>Prefer to chat?</b><small>Ask my AI assistant anything.</small></span></button>
+      </div>
+      <div class="fit__main">
+        <form class="glass jd" id="jdForm">
+          <div class="jd__top"><label for="jd">Job description</label><span id="jdCount">0 words</span></div>
+          <textarea id="jd" placeholder="Paste the role's requirements here…"></textarea>
+          <div class="jd__actions">
+            <button type="button" class="ghost" id="jdExample">Try an example</button>
+            <button type="button" class="ghost" id="jdClear">Clear</button>
+            <button type="submit" class="btn btn--glow btn--sm"><svg class="ic"><use href="#i-spark"/></svg> Analyze fit</button>
+          </div>
+        </form>
+        <p class="fit__err" id="jdErr" role="alert"></p>
+        <div id="report" aria-live="polite"></div>
+        <p class="fit__note">Runs in your browser. Nothing is stored or sent.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="sec" id="contact">
+    <div class="wrap">
+      <div class="glass contact">
+        <div><p class="kicker">Contact</p><h2 class="title">Let's <em>talk.</em></h2></div>
+        <a class="badge" href="https://wa.me/917840938958?text=Hi%20Rohit%2C%20I%20saw%20your%20portfolio." target="_blank" rel="noopener" aria-label="Message Rohit on WhatsApp" data-mag data-cursor="Chat">
+          <svg class="rt" viewBox="0 0 100 100" aria-hidden="true"><defs><path id="circ" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0"/></defs><text><textPath href="#circ" textLength="236" lengthAdjust="spacing">Available for work · Say hello · </textPath></text></svg>
+          <svg class="ic"><use href="#i-arrow"/></svg>
+        </a>
+        <div class="contact__info">
+          <div class="contact__mail"><span id="addr">rohitpujari7114@gmail.com</span><button class="copy" type="button" id="copyMail"><svg class="ic" style="width:13px;height:13px"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+          <div class="contact__row">
+            <a class="btn btn--glow" href="https://wa.me/917840938958" target="_blank" rel="noopener" data-mag><svg class="ic"><use href="#i-whatsapp"/></svg> +91 78409 38958</a>
+            <a class="btn btn--line" href="https://www.linkedin.com/in/rohit-pujari-149723273" target="_blank" rel="noopener" data-mag><svg class="ic"><use href="#i-linkedin"/></svg> LinkedIn</a>
+            <a class="btn btn--line" href="https://github.com/Rodevops07" target="_blank" rel="noopener" data-mag><svg class="ic"><use href="#i-github"/></svg> GitHub</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mark" aria-label="Rohit Pujari">
+    <div class="wrap">
+      <div class="mark__word" id="markWord"><span class="ghost">Rohit <em>Pujari</em></span><span class="fill" id="markFill" aria-hidden="true">Rohit <em>Pujari</em></span></div>
+      <div class="mark__row"><span>© <span id="year">2026</span> Rohit Pujari · <span id="clock">--:--</span> IST</span><a href="#top" data-scr>Back to top ↑</a></div>
+    </div>
+  </section>
+</div>
+
+<button class="fab" id="fab" type="button" aria-controls="chat" aria-expanded="false" data-chat>
+  <span class="orb" aria-hidden="true" data-orb></span>
+  <span class="fab__txt">Ask my AI<small>skills · projects · hiring</small></span>
+</button>
+<div class="nudge" id="nudge" hidden><button type="button" id="nudgeX" aria-label="Dismiss">×</button>Hi! I'm Rohit's AI. Ask me anything about his skills or projects.</div>
+<section class="chat" id="chat" aria-label="Rohit's AI assistant" hidden data-lenis-prevent>
+  <header class="chat__head">
+    <span class="orb" aria-hidden="true" data-orb></span>
+    <div class="chat__meta"><p class="chat__title">Rohit's AI</p><p class="chat__mode"><span class="status"></span>Answers from Rohit's profile</p></div>
+    <button class="chat__x" id="chatX" type="button" aria-label="Close assistant">×</button>
+  </header>
+  <div class="chat__log" id="chatLog"></div>
+  <div class="chat__chips" id="chatChips">
+    <button type="button">What are his SDE skills?</button>
+    <button type="button">Explain OpsMind</button>
+    <button type="button">Is he open to work?</button>
+    <button type="button">Kubernetes experience?</button>
+    <button type="button">How can I contact him?</button>
+  </div>
+  <form class="chat__form" id="chatForm" autocomplete="off">
+    <label for="chatIn" class="sr">Your question</label>
+    <input id="chatIn" type="text" placeholder="Ask about skills, projects, experience…" maxlength="300">
+    <button type="submit" aria-label="Send"><svg class="ic"><use href="#i-arrow"/></svg></button>
+  </form>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(() => {
+  "use strict";
+  const doc = document.documentElement;
+  doc.classList.add("js");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  $("#year").textContent = new Date().getFullYear();
+  const fmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+  const tickClock = () => { $("#clock").textContent = fmt.format(new Date()); };
+  tickClock(); setInterval(tickClock, 15000);
+  const LOGOS = [{"n":"AWS","c":"#FF9900","d":"M6.763 10.036c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 0 1-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 0 1-.287-.375 6.18 6.18 0 0 1-.248-.471c-.622.734-1.405 1.101-2.347 1.101-.67 0-1.205-.191-1.596-.574-.391-.384-.59-.894-.59-1.533 0-.678.239-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367-.28 0-.568.031-.863.103-.295.072-.583.16-.862.272a2.287 2.287 0 0 1-.28.104.488.488 0 0 1-.127.023c-.112 0-.168-.08-.168-.247v-.391c0-.128.016-.224.056-.28a.597.597 0 0 1 .224-.167c.279-.144.614-.264 1.005-.36a4.84 4.84 0 0 1 1.246-.151c.95 0 1.644.216 2.091.647.439.43.662 1.085.662 1.963v2.586zm-3.24 1.214c.263 0 .534-.048.822-.144.287-.096.543-.271.758-.51.128-.152.224-.32.272-.512.047-.191.08-.423.08-.694v-.335a6.66 6.66 0 0 0-.735-.136 6.02 6.02 0 0 0-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.917 0 .375.095.655.295.846.191.2.47.296.838.296zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 5.55a1.398 1.398 0 0 1-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 0 1 .32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.261 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 0 1 .311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 0 1-.056.2l-1.923 6.17c-.048.16-.104.263-.168.311a.51.51 0 0 1-.303.08h-.687c-.151 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32l-1.238-5.148-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08zm10.256.215c-.415 0-.83-.048-1.229-.143-.399-.096-.71-.2-.918-.32-.128-.071-.215-.151-.247-.223a.563.563 0 0 1-.048-.224v-.407c0-.167.064-.247.183-.247.048 0 .096.008.144.024.048.016.12.048.2.08.271.12.566.215.878.279.319.064.63.096.95.096.502 0 .894-.088 1.165-.264a.86.86 0 0 0 .415-.758.777.777 0 0 0-.215-.559c-.144-.151-.416-.287-.807-.415l-1.157-.36c-.583-.183-1.014-.454-1.277-.813a1.902 1.902 0 0 1-.4-1.158c0-.335.073-.63.216-.886.144-.255.335-.479.575-.654.24-.184.51-.32.83-.415.32-.096.655-.136 1.006-.136.175 0 .359.008.535.032.183.024.35.056.518.088.16.04.312.08.455.127.144.048.256.096.336.144a.69.69 0 0 1 .24.2.43.43 0 0 1 .071.263v.375c0 .168-.064.256-.184.256a.83.83 0 0 1-.303-.096 3.652 3.652 0 0 0-1.532-.311c-.455 0-.815.071-1.062.223-.248.152-.375.383-.375.71 0 .224.08.416.24.567.159.152.454.304.877.44l1.134.358c.574.184.99.44 1.237.767.247.327.367.702.367 1.117 0 .343-.072.655-.207.926-.144.272-.336.511-.583.703-.248.2-.543.343-.886.447-.36.111-.734.167-1.142.167zM21.698 16.207c-2.626 1.94-6.442 2.969-9.722 2.969-4.598 0-8.74-1.7-11.87-4.526-.247-.223-.024-.527.272-.351 3.384 1.963 7.559 3.153 11.877 3.153 2.914 0 6.114-.607 9.06-1.852.439-.2.814.287.383.607zM22.792 14.961c-.336-.43-2.22-.207-3.074-.103-.255.032-.295-.192-.063-.36 1.5-1.053 3.967-.75 4.254-.399.287.36-.08 2.826-1.485 4.007-.215.184-.423.088-.327-.151.32-.79 1.03-2.57.695-2.994z"},{"n":"Kubernetes","c":"#4F86F0","d":"M10.204 14.35l.007.01-.999 2.413a5.171 5.171 0 0 1-2.075-2.597l2.578-.437.004.005a.44.44 0 0 1 .484.606zm-.833-2.129a.44.44 0 0 0 .173-.756l.002-.011L7.585 9.7a5.143 5.143 0 0 0-.73 3.255l2.514-.725.002-.009zm1.145-1.98a.44.44 0 0 0 .699-.337l.01-.005.15-2.62a5.144 5.144 0 0 0-3.01 1.442l2.147 1.523.004-.002zm.76 2.75l.723.349.722-.347.18-.78-.5-.623h-.804l-.5.623.179.779zm1.5-3.095a.44.44 0 0 0 .7.336l.008.003 2.134-1.513a5.188 5.188 0 0 0-2.992-1.442l.148 2.615.002.001zm10.876 5.97l-5.773 7.181a1.6 1.6 0 0 1-1.248.594l-9.261.003a1.6 1.6 0 0 1-1.247-.596l-5.776-7.18a1.583 1.583 0 0 1-.307-1.34L2.1 5.573c.108-.47.425-.864.863-1.073L11.305.513a1.606 1.606 0 0 1 1.385 0l8.345 3.985c.438.209.755.604.863 1.073l2.062 8.955c.108.47-.005.963-.308 1.34zm-3.289-2.057c-.042-.01-.103-.026-.145-.034-.174-.033-.315-.025-.479-.038-.35-.037-.638-.067-.895-.148-.105-.04-.18-.165-.216-.216l-.201-.059a6.45 6.45 0 0 0-.105-2.332 6.465 6.465 0 0 0-.936-2.163c.052-.047.15-.133.177-.159.008-.09.001-.183.094-.282.197-.185.444-.338.743-.522.142-.084.273-.137.415-.242.032-.024.076-.062.11-.089.24-.191.295-.52.123-.736-.172-.216-.506-.236-.745-.045-.034.027-.08.062-.111.088-.134.116-.217.23-.33.35-.246.25-.45.458-.673.609-.097.056-.239.037-.303.033l-.19.135a6.545 6.545 0 0 0-4.146-2.003l-.012-.223c-.065-.062-.143-.115-.163-.25-.022-.268.015-.557.057-.905.023-.163.061-.298.068-.475.001-.04-.001-.099-.001-.142 0-.306-.224-.555-.5-.555-.275 0-.499.249-.499.555l.001.014c0 .041-.002.092 0 .128.006.177.044.312.067.475.042.348.078.637.056.906a.545.545 0 0 1-.162.258l-.012.211a6.424 6.424 0 0 0-4.166 2.003 8.373 8.373 0 0 1-.18-.128c-.09.012-.18.04-.297-.029-.223-.15-.427-.358-.673-.608-.113-.12-.195-.234-.329-.349-.03-.026-.077-.062-.111-.088a.594.594 0 0 0-.348-.132.481.481 0 0 0-.398.176c-.172.216-.117.546.123.737l.007.005.104.083c.142.105.272.159.414.242.299.185.546.338.743.522.076.082.09.226.1.288l.16.143a6.462 6.462 0 0 0-1.02 4.506l-.208.06c-.055.072-.133.184-.215.217-.257.081-.546.11-.895.147-.164.014-.305.006-.48.039-.037.007-.09.02-.133.03l-.004.002-.007.002c-.295.071-.484.342-.423.608.061.267.349.429.645.365l.007-.001.01-.003.129-.029c.17-.046.294-.113.448-.172.33-.118.604-.217.87-.256.112-.009.23.069.288.101l.217-.037a6.5 6.5 0 0 0 2.88 3.596l-.09.218c.033.084.069.199.044.282-.097.252-.263.517-.452.813-.091.136-.185.242-.268.399-.02.037-.045.095-.064.134-.128.275-.034.591.213.71.248.12.556-.007.69-.282v-.002c.02-.039.046-.09.062-.127.07-.162.094-.301.144-.458.132-.332.205-.68.387-.897.05-.06.13-.082.215-.105l.113-.205a6.453 6.453 0 0 0 4.609.012l.106.192c.086.028.18.042.256.155.136.232.229.507.342.84.05.156.074.295.145.457.016.037.043.09.062.129.133.276.442.402.69.282.247-.118.341-.435.213-.71-.02-.039-.045-.096-.065-.134-.083-.156-.177-.261-.268-.398-.19-.296-.346-.541-.443-.793-.04-.13.007-.21.038-.294-.018-.022-.059-.144-.083-.202a6.499 6.499 0 0 0 2.88-3.622c.064.01.176.03.213.038.075-.05.144-.114.28-.104.266.039.54.138.87.256.154.06.277.128.448.173.036.01.088.019.13.028l.009.003.007.001c.297.064.584-.098.645-.365.06-.266-.128-.537-.423-.608zM16.4 9.701l-1.95 1.746v.005a.44.44 0 0 0 .173.757l.003.01 2.526.728a5.199 5.199 0 0 0-.108-1.674A5.208 5.208 0 0 0 16.4 9.7zm-4.013 5.325a.437.437 0 0 0-.404-.232.44.44 0 0 0-.372.233h-.002l-1.268 2.292a5.164 5.164 0 0 0 3.326.003l-1.27-2.296h-.01zm1.888-1.293a.44.44 0 0 0-.27.036.44.44 0 0 0-.214.572l-.003.004 1.01 2.438a5.15 5.15 0 0 0 2.081-2.615l-2.6-.44-.004.005z"},{"n":"Docker","c":"#2496ED","d":"M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z"},{"n":"Terraform","c":"#9B6DE0","d":"M1.44 0v7.575l6.561 3.79V3.787zm21.12 4.227l-6.561 3.791v7.574l6.56-3.787zM8.72 4.23v7.575l6.561 3.787V8.018zm0 8.405v7.575L15.28 24v-7.578z"},{"n":"Python","c":"#4B8BBE","d":"M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z"},{"n":"GitHub Actions","c":"#3D9BFF","d":"M10.984 13.836a.5.5 0 0 1-.353-.146l-.745-.743a.5.5 0 1 1 .706-.708l.392.391 1.181-1.18a.5.5 0 0 1 .708.707l-1.535 1.533a.504.504 0 0 1-.354.146zm9.353-.147l1.534-1.532a.5.5 0 0 0-.707-.707l-1.181 1.18-.392-.391a.5.5 0 1 0-.706.708l.746.743a.497.497 0 0 0 .706-.001zM4.527 7.452l2.557-1.585A1 1 0 0 0 7.09 4.17L4.533 2.56A1 1 0 0 0 3 3.406v3.196a1.001 1.001 0 0 0 1.527.85zm2.03-2.436L4 6.602V3.406l2.557 1.61zM24 12.5c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3h-2.08a3.503 3.503 0 0 1-3.46 3 3.502 3.502 0 0 1-3.46-3h-.558c-.972 0-1.85-.399-2.482-1.042V17c0 1.654 1.346 3 3 3h.04c.244-1.693 1.7-3 3.46-3 1.93 0 3.5 1.57 3.5 3.5S13.43 24 11.5 24a3.502 3.502 0 0 1-3.46-3H8c-2.206 0-4-1.794-4-4V9.899A5.008 5.008 0 0 1 0 5c0-2.757 2.243-5 5-5s5 2.243 5 5a5.005 5.005 0 0 1-4.952 4.998A2.482 2.482 0 0 0 7.482 12h.558c.244-1.693 1.7-3 3.46-3a3.502 3.502 0 0 1 3.46 3h2.08a3.503 3.503 0 0 1 3.46-3c1.93 0 3.5 1.57 3.5 3.5zm-15 8c0 1.378 1.122 2.5 2.5 2.5s2.5-1.122 2.5-2.5-1.122-2.5-2.5-2.5S9 19.122 9 20.5zM5 9c2.206 0 4-1.794 4-4S7.206 1 5 1 1 2.794 1 5s1.794 4 4 4zm9 3.5c0-1.378-1.122-2.5-2.5-2.5S9 11.122 9 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm9 0c0-1.378-1.122-2.5-2.5-2.5S18 11.122 18 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm-13 8a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm2 0a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm12 0c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3.002c-.007.001-.013.005-.021.005l-.506.017h-.017a.5.5 0 0 1-.016-.999l.506-.017c.018-.002.035.006.052.007A3.503 3.503 0 0 1 20.5 17c1.93 0 3.5 1.57 3.5 3.5zm-1 0c0-1.378-1.122-2.5-2.5-2.5S18 19.122 18 20.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5z"},{"n":"Linux","c":"#FCC624","d":"M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z"},{"n":"Prometheus","c":"#E6522C","d":"M12 0C5.373 0 0 5.372 0 12c0 6.627 5.373 12 12 12s12-5.373 12-12c0-6.628-5.373-12-12-12zm0 22.46c-1.885 0-3.414-1.26-3.414-2.814h6.828c0 1.553-1.528 2.813-3.414 2.813zm5.64-3.745H6.36v-2.046h11.28v2.046zm-.04-3.098H6.391c-.037-.043-.075-.086-.111-.13-1.155-1.401-1.427-2.133-1.69-2.879-.005-.025 1.4.287 2.395.511 0 0 .513.119 1.262.255-.72-.843-1.147-1.915-1.147-3.01 0-2.406 1.845-4.508 1.18-6.207.648.053 1.34 1.367 1.387 3.422.689-.951.977-2.69.977-3.755 0-1.103.727-2.385 1.454-2.429-.648 1.069.168 1.984.894 4.256.272.854.237 2.29.447 3.201.07-1.892.395-4.652 1.595-5.605-.529 1.2.079 2.702.494 3.424.671 1.164 1.078 2.047 1.078 3.716a4.642 4.642 0 01-1.11 2.996c.792-.149 1.34-.283 1.34-.283l2.573-.502s-.374 1.538-1.81 3.019z"},{"n":"Nginx","c":"#1FB35A","d":"M12 0L1.605 6v12L12 24l10.395-6V6L12 0zm6 16.59c0 .705-.646 1.29-1.529 1.29-.631 0-1.351-.255-1.801-.81l-6-7.141v6.66c0 .721-.57 1.29-1.274 1.29H7.32c-.721 0-1.29-.6-1.29-1.29V7.41c0-.705.63-1.29 1.5-1.29.646 0 1.38.255 1.83.81l5.97 7.141V7.41c0-.721.6-1.29 1.29-1.29h.075c.72 0 1.29.6 1.29 1.29v9.18H18z"},{"n":"Jenkins","c":"#E05A4F","d":"M2.872 24h-.975a3.866 3.866 0 01-.07-.197c-.215-.666-.594-1.49-.692-2.154-.146-.984.78-1.039 1.374-1.465.915-.66 1.635-1.025 2.627-1.62.295-.179 1.182-.624 1.281-.829.201-.408-.345-.982-.49-1.3-.225-.507-.345-.937-.376-1.435-.824-.13-1.455-.627-1.844-1.185-.63-.925-1.066-2.635-.525-3.936.045-.103.254-.305.285-.463.06-.308-.105-.72-.12-1.048-.06-1.692.284-3.15 1.425-3.66.463-1.84 2.113-2.453 3.673-3.367.58-.342 1.224-.562 1.89-.807 2.372-.877 6.027-.712 7.994.783.836.633 2.176 1.97 2.656 2.939 1.262 2.555 1.17 6.825.287 9.934-.12.421-.29 1.032-.533 1.533-.168.35-.689 1.05-.625 1.36.064.314 1.19 1.17 1.432 1.395.434.422 1.26.975 1.324 1.5.07.557-.248 1.336-.41 1.875-.217.721-.436 1.441-.654 2.131H2.87zm11.104-3.54c-.545-.3-1.361-.622-2.065-.757-.87-.164-.78 1.188-.75 1.994.03.643.36 1.316.51 1.744.076.197.09.41.256.449.3.068 1.29-.326 1.575-.479.6-.328 1.064-.844 1.574-1.189.016-.17.016-.34.03-.508a2.648 2.648 0 00-1.095-.277c.314-.15.75-.15 1.035-.332l.016-.193c-.496-.03-.69-.254-1.021-.436zm7.454 2.935a17.78 17.78 0 00.465-1.752c.06-.287.215-.918.178-1.176-.059-.459-.684-.799-1.004-1.086-.584-.525-.95-.975-1.56-1.469-.249.375-.78.615-.983.914 1.447-.689 1.71 2.625 1.141 3.69.09.329.391.45.514.735l-.086.166h1.29c.013 0 .03 0 .044.014zm-6.634-.012c-.05-.074-.1-.135-.15-.209l-.301.195h.45zm2.77 0c.008-.209.018-.404.03-.598-.53.029-.825-.48-1.196-.527-.324-.045-.6.361-1.02.195-.095.105-.183.227-.284.316.154.18.295.375.424.584h.815c.014-.164.135-.285.3-.285.165 0 .284.121.284.27h.66zm2.116 0c-.314-.479-.947-.898-1.68-.555l-.03.541h1.71zm-8.51 0l-.104-.344c-.225-.72-.36-1.26-.405-1.68-.914-.436-1.875-.87-2.654-1.426-.15-.105-1.109-1.35-1.23-1.305-1.739.676-3.359 1.86-4.814 2.984.256.557.48 1.141.69 1.74h8.505zm8.265-2.113c-.029-.512-.164-1.56-.48-1.74-.66-.39-1.846.78-2.34.943.045.15.135.271.15.48.285-.074.645-.029.898.092-.299.03-.629.03-.824.164-.074.195.016.48-.029.764.69.197 1.5.303 2.385.332.164-.227.225-.645.211-1.082zm-4.08-.36c-.044.375.046.51.12.943 1.26.391 1.034-1.74-.135-.959zM8.76 19.5c-.45.457 1.27 1.082 1.814 1.115 0-.29.165-.564.135-.77-.65-.118-1.502-.042-1.945-.347zm5.565.215c0 .043-.061.03-.068.064.58.451 1.014.545 1.802.51.354-.262.67-.563 1.043-.807-.855.074-1.931.607-2.774.23zm3.42-17.726c-1.606-.906-4.35-1.591-6.076-.731-1.38.692-3.27 1.84-3.899 3.292.6 1.402-.166 2.686-.226 4.109-.018.757.36 1.42.391 2.242-.2.338-.825.38-1.26.356-.146-.729-.4-1.549-1.155-1.63-1.064-.116-1.845.764-1.89 1.683-.06 1.08.833 2.864 2.085 2.745.488-.046.608-.54 1.139-.54.285.57-.445.75-.523 1.154-.016.105.06.511.104.705.233.944.744 2.16 1.245 2.88.635.9 1.884 1.051 3.229 1.141.24-.525 1.125-.48 1.706-.346-.691-.27-1.336-.945-1.875-1.529-.615-.676-1.23-1.41-1.261-2.28 1.155 1.604 2.1 3 4.2 3.704 1.59.525 3.45-.254 4.664-1.109.51-.359.811-.93 1.17-1.439 1.35-1.936 1.98-4.71 1.846-7.394-.06-1.111-.06-2.221-.436-2.955-.389-.781-1.695-1.471-2.475-.781-.15-.764.63-1.23 1.545-.96-.66-.854-1.336-1.858-2.266-2.384zM13.58 14.896c.615 1.544 2.724 1.363 4.505 1.323-.084.194-.256.435-.465.515-.57.232-2.145.408-2.937-.012-.506-.27-.824-.873-1.102-1.227-.137-.172-.795-.608-.012-.609zm.164-.87c.893.464 2.52.517 3.731.48.066.267.066.593.068.913-1.55.08-3.386-.304-3.794-1.395h-.005zm6.675-.586c-.473.9-1.145 1.897-2.539 1.928-.023-.284-.045-.735 0-.904 1.064-.103 1.727-.646 2.543-1.017zm-.649-.667c-1.02.66-2.154 1.375-3.824 1.21-.351-.31-.485-1-.14-1.458.181.313.06.885.57.97.944.165 2.038-.579 2.73-.84.42-.713-.046-.976-.42-1.433-.782-.93-1.83-2.1-1.802-3.51.314-.224.346.346.391.45.404.96 1.424 2.175 2.174 3 .18.21.48.39.51.524.092.39-.254.854-.209 1.11zm-13.439-.675c-.314-.184-.393-.99-.768-1.01-.535-.03-.438 1.05-.436 1.68-.37-.33-.435-1.365-.164-1.89-.308-.15-.445.164-.618.284.22-1.59 2.34-.734 1.99.96zM4.713 5.995c-.685.756-.54 2.174-.459 3.188 1.244-.785 2.898.06 2.883 1.394.595-.016.223-.744.115-1.215-.353-1.528.592-3.187.041-4.59-1.064.084-1.939.52-2.578 1.215zm9.12 1.113c.307.562.404 1.148.84 1.57.195.19.574.424.387.95-.045.121-.365.391-.551.45-.674.195-2.254.03-1.721-.81.563.015 1.314.36 1.732-.045-.314-.524-.885-1.53-.674-2.13zm6.198-.013h.068c.33.668.6 1.375 1.004 1.965-.27.628-2.053 1.19-2.023.057.39-.17 1.05-.035 1.395-.25-.193-.556-.48-1.006-.434-1.771zm-6.927-1.617c-1.422-.33-2.131.592-2.56 1.553-.384-.094-.231-.615-.135-.883.255-.701 1.28-1.633 2.119-1.506.359.057.848.386.576.834zM9.642 1.593c-1.56.44-3.56 1.574-4.2 2.974.495-.07.84-.321 1.33-.351.186-.016.428.074.641.015.424-.104.78-1.065 1.102-1.41.31-.345.685-.496.94-.81.167-.09.409-.074.42-.33-.073-.075-.15-.135-.232-.105v.017z"},{"n":"FastAPI","c":"#05A58F","d":"M12 0C5.375 0 0 5.375 0 12c0 6.627 5.375 12 12 12 6.626 0 12-5.373 12-12 0-6.625-5.373-12-12-12zm-.624 21.62v-7.528H7.19L13.203 2.38v7.528h4.029L11.376 21.62z"},{"n":"Node.js","c":"#6CB04A","d":"M11.998,24c-0.321,0-0.641-0.084-0.922-0.247l-2.936-1.737c-0.438-0.245-0.224-0.332-0.08-0.383 c0.585-0.203,0.703-0.25,1.328-0.604c0.065-0.037,0.151-0.023,0.218,0.017l2.256,1.339c0.082,0.045,0.197,0.045,0.272,0l8.795-5.076 c0.082-0.047,0.134-0.141,0.134-0.238V6.921c0-0.099-0.053-0.192-0.137-0.242l-8.791-5.072c-0.081-0.047-0.189-0.047-0.271,0 L3.075,6.68C2.99,6.729,2.936,6.825,2.936,6.921v10.15c0,0.097,0.054,0.189,0.139,0.235l2.409,1.392 c1.307,0.654,2.108-0.116,2.108-0.89V7.787c0-0.142,0.114-0.253,0.256-0.253h1.115c0.139,0,0.255,0.112,0.255,0.253v10.021 c0,1.745-0.95,2.745-2.604,2.745c-0.508,0-0.909,0-2.026-0.551L2.28,18.675c-0.57-0.329-0.922-0.945-0.922-1.604V6.921 c0-0.659,0.353-1.275,0.922-1.603l8.795-5.082c0.557-0.315,1.296-0.315,1.848,0l8.794,5.082c0.57,0.329,0.924,0.944,0.924,1.603 v10.15c0,0.659-0.354,1.273-0.924,1.604l-8.794,5.078C12.643,23.916,12.324,24,11.998,24z M19.099,13.993 c0-1.9-1.284-2.406-3.987-2.763c-2.731-0.361-3.009-0.548-3.009-1.187c0-0.528,0.235-1.233,2.258-1.233 c1.807,0,2.473,0.389,2.747,1.607c0.024,0.115,0.129,0.199,0.247,0.199h1.141c0.071,0,0.138-0.031,0.186-0.081 c0.048-0.054,0.074-0.123,0.067-0.196c-0.177-2.098-1.571-3.076-4.388-3.076c-2.508,0-4.004,1.058-4.004,2.833 c0,1.925,1.488,2.457,3.895,2.695c2.88,0.282,3.103,0.703,3.103,1.269c0,0.983-0.789,1.402-2.642,1.402 c-2.327,0-2.839-0.584-3.011-1.742c-0.02-0.124-0.126-0.215-0.253-0.215h-1.137c-0.141,0-0.254,0.112-0.254,0.253 c0,1.482,0.806,3.248,4.655,3.248C17.501,17.007,19.099,15.91,19.099,13.993z"},{"n":"Next.js","c":"#F2F2F2","d":"M11.5725 0c-.1763 0-.3098.0013-.3584.0067-.0516.0053-.2159.021-.3636.0328-3.4088.3073-6.6017 2.1463-8.624 4.9728C1.1004 6.584.3802 8.3666.1082 10.255c-.0962.659-.108.8537-.108 1.7474s.012 1.0884.108 1.7476c.652 4.506 3.8591 8.2919 8.2087 9.6945.7789.2511 1.6.4223 2.5337.5255.3636.04 1.9354.04 2.299 0 1.6117-.1783 2.9772-.577 4.3237-1.2643.2065-.1056.2464-.1337.2183-.1573-.0188-.0139-.8987-1.1938-1.9543-2.62l-1.919-2.592-2.4047-3.5583c-1.3231-1.9564-2.4117-3.556-2.4211-3.556-.0094-.0026-.0187 1.5787-.0235 3.509-.0067 3.3802-.0093 3.5162-.0516 3.596-.061.115-.108.1618-.2064.2134-.075.0374-.1408.0445-.495.0445h-.406l-.1078-.068a.4383.4383 0 01-.1572-.1712l-.0493-.1056.0053-4.703.0067-4.7054.0726-.0915c.0376-.0493.1174-.1125.1736-.143.0962-.047.1338-.0517.5396-.0517.4787 0 .5584.0187.6827.1547.0353.0377 1.3373 1.9987 2.895 4.3608a10760.433 10760.433 0 004.7344 7.1706l1.9002 2.8782.096-.0633c.8518-.5536 1.7525-1.3418 2.4657-2.1627 1.5179-1.7429 2.4963-3.868 2.8247-6.134.0961-.6591.1078-.854.1078-1.7475 0-.8937-.012-1.0884-.1078-1.7476-.6522-4.506-3.8592-8.2919-8.2087-9.6945-.7672-.2487-1.5836-.42-2.4985-.5232-.169-.0176-1.0835-.0366-1.6123-.037zm4.0685 7.217c.3473 0 .4082.0053.4857.047.1127.0562.204.1642.237.2767.0186.061.0234 1.3653.0186 4.3044l-.0067 4.2175-.7436-1.14-.7461-1.14v-3.066c0-1.982.0093-3.0963.0234-3.1502.0375-.1313.1196-.2346.2323-.2955.0961-.0494.1313-.054.4997-.054z"},{"n":"Git","c":"#F05032","d":"M23.546 10.93L13.067.452c-.604-.603-1.582-.603-2.188 0L8.708 2.627l2.76 2.76c.645-.215 1.379-.07 1.889.441.516.515.658 1.258.438 1.9l2.658 2.66c.645-.223 1.387-.078 1.9.435.721.72.721 1.884 0 2.604-.719.719-1.881.719-2.6 0-.539-.541-.674-1.337-.404-1.996L12.86 8.955v6.525c.176.086.342.203.488.348.713.721.713 1.883 0 2.6-.719.721-1.889.721-2.609 0-.719-.719-.719-1.879 0-2.598.182-.18.387-.316.605-.406V8.835c-.217-.091-.424-.222-.6-.401-.545-.545-.676-1.342-.396-2.009L7.636 3.7.45 10.881c-.6.605-.6 1.584 0 2.189l10.48 10.477c.604.604 1.582.604 2.186 0l10.43-10.43c.605-.603.605-1.582 0-2.187"},{"n":"Bash","c":"#5FBF3A","d":"M21.038,4.9l-7.577-4.498C13.009,0.134,12.505,0,12,0c-0.505,0-1.009,0.134-1.462,0.403L2.961,4.9 C2.057,5.437,1.5,6.429,1.5,7.503v8.995c0,1.073,0.557,2.066,1.462,2.603l7.577,4.497C10.991,23.866,11.495,24,12,24 c0.505,0,1.009-0.134,1.461-0.402l7.577-4.497c0.904-0.537,1.462-1.529,1.462-2.603V7.503C22.5,6.429,21.943,5.437,21.038,4.9z M15.17,18.946l0.013,0.646c0.001,0.078-0.05,0.167-0.111,0.198l-0.383,0.22c-0.061,0.031-0.111-0.007-0.112-0.085L14.57,19.29 c-0.328,0.136-0.66,0.169-0.872,0.084c-0.04-0.016-0.057-0.075-0.041-0.142l0.139-0.584c0.011-0.046,0.036-0.092,0.069-0.121 c0.012-0.011,0.024-0.02,0.036-0.026c0.022-0.011,0.043-0.014,0.062-0.006c0.229,0.077,0.521,0.041,0.802-0.101 c0.357-0.181,0.596-0.545,0.592-0.907c-0.003-0.328-0.181-0.465-0.613-0.468c-0.55,0.001-1.064-0.107-1.072-0.917 c-0.007-0.667,0.34-1.361,0.889-1.8l-0.007-0.652c-0.001-0.08,0.048-0.168,0.111-0.2l0.37-0.236 c0.061-0.031,0.111,0.007,0.112,0.087l0.006,0.653c0.273-0.109,0.511-0.138,0.726-0.088c0.047,0.012,0.067,0.076,0.048,0.151 l-0.144,0.578c-0.011,0.044-0.036,0.088-0.065,0.116c-0.012,0.012-0.025,0.021-0.038,0.028c-0.019,0.01-0.038,0.013-0.057,0.009 c-0.098-0.022-0.332-0.073-0.699,0.113c-0.385,0.195-0.52,0.53-0.517,0.778c0.003,0.297,0.155,0.387,0.681,0.396 c0.7,0.012,1.003,0.318,1.01,1.023C16.105,17.747,15.736,18.491,15.17,18.946z M19.143,17.859c0,0.06-0.008,0.116-0.058,0.145 l-1.916,1.164c-0.05,0.029-0.09,0.004-0.09-0.056v-0.494c0-0.06,0.037-0.093,0.087-0.122l1.887-1.129 c0.05-0.029,0.09-0.004,0.09,0.056V17.859z M20.459,6.797l-7.168,4.427c-0.894,0.523-1.553,1.109-1.553,2.187v8.833 c0,0.645,0.26,1.063,0.66,1.184c-0.131,0.023-0.264,0.039-0.398,0.039c-0.42,0-0.833-0.114-1.197-0.33L3.226,18.64 c-0.741-0.44-1.201-1.261-1.201-2.142V7.503c0-0.881,0.46-1.702,1.201-2.142l7.577-4.498c0.363-0.216,0.777-0.33,1.197-0.33 c0.419,0,0.833,0.114,1.197,0.33l7.577,4.498c0.624,0.371,1.046,1.013,1.164,1.732C21.686,6.557,21.12,6.411,20.459,6.797z"}];
+  const PHOTO = "assets/rohit.jpg";
+  const FACE = "assets/rohit-face.jpg";
+  const hasPhoto = !!PHOTO && !PHOTO.startsWith("__");
+
+  /* ---------- Photo slots ---------- */
+  if (hasPhoto) {
+    $$("[data-photo]").forEach((el) => { el.textContent = ""; const i = new Image(); i.src = FACE; i.alt = ""; el.appendChild(i); });
+    const img = new Image(); img.src = PHOTO; img.alt = "Rohit Pujari"; $("#portraitMono").replaceWith(img);
+    $$("[data-orb]").forEach((el) => { const i = new Image(); i.src = FACE; i.alt = ""; el.appendChild(i); });
+  } else $$("[data-orb]").forEach((el) => { const m = document.createElement("span"); m.className = "orb__m"; m.textContent = "AI"; el.appendChild(m); });
+
+  /* ---------- Logo band ---------- */
+  const logoSvg = (l, color) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="${color ? l.c : "currentColor"}" d="${l.d}"/></svg>`;
+  $("#band").innerHTML = [0, 1].map((k) => `<ul${k ? ' aria-hidden="true"' : ""}>${LOGOS.map((l) => `<li>${logoSvg(l, true)}${esc(l.n)}</li>`).join("")}</ul>`).join("");
+
+  /* ---------- Name letters ---------- */
+  const nameChars = [];
+  $$(".name .l").forEach((part) => {
+    const txt = part.textContent; part.textContent = "";
+    [...txt].forEach((c, i) => { const s = document.createElement("span"); s.className = "ch"; s.textContent = c; s.style.backgroundPosition = (i / Math.max(1, txt.length - 1) * 100) + "% 0"; part.appendChild(s); nameChars.push(s); });
+  });
+
+  /* ---------- Role rotator ---------- */
+  (function roles() {
+    const el = $("#roleWord"), words = ["Cloud", "Backend", "DevOps", "SRE", "AIOps"];
+    if (reduce) return;
+    let i = 0;
+    const next = async () => {
+      i = (i + 1) % words.length;
+      for (let k = el.textContent.length; k >= 0; k--) { el.textContent = el.textContent.slice(0, k); await wait(30); }
+      for (let k = 1; k <= words[i].length; k++) { el.textContent = words[i].slice(0, k); await wait(70); }
+      setTimeout(next, 1900);
+    };
+    setTimeout(next, 3200);
+  })();
+
+  /* ---------- Reveal ---------- */
+  const rv = $$("[data-reveal]");
+  rv.forEach((el) => { if (el.getBoundingClientRect().top > innerHeight * .92) el.classList.add("pending"); });
+  const rio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.remove("pending"); rio.unobserve(e.target); } }), { rootMargin: "0px 0px -6% 0px" });
+  rv.forEach((el) => rio.observe(el));
+
+  /* ---------- Nav ---------- */
+  const navA = new Map($$("#navLinks a").map((a) => [a.getAttribute("href").slice(1), a]));
+  const nio = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    navA.forEach((a) => a.classList.remove("is-on")); navA.get(e.target.id)?.classList.add("is-on");
+  }), { rootMargin: "-45% 0px -50% 0px" });
+  ["about", "projects", "skills", "ai", "contact"].forEach((id) => nio.observe($("#" + id)));
+
+  /* ---------- Cursor, magnetic, tilt ---------- */
+  if (fine && !reduce) {
+    doc.classList.add("has-cursor");
+    const cur = $(".cursor"), label = $("#cursorLabel");
+    let x = innerWidth / 2, y = innerHeight / 2, cx = x, cy = y;
+    addEventListener("pointermove", (e) => { x = e.clientX; y = e.clientY; }, { passive: true });
+    const lc = () => { cx += (x - cx) * .2; cy += (y - cy) * .2; cur.style.transform = `translate3d(${cx}px,${cy}px,0)`; requestAnimationFrame(lc); }; lc();
+    addEventListener("pointerover", (e) => {
+      const lab = e.target.closest("[data-cursor]"), link = e.target.closest("a, button, input, textarea, [role=tab]");
+      cur.classList.toggle("is-label", !!lab && !link); cur.classList.toggle("is-link", !!link);
+      if (lab && !link) label.textContent = lab.dataset.cursor;
+    });
+    $$("[data-mag]").forEach((b) => {
+      b.addEventListener("pointermove", (e) => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${((e.clientX - r.left) / r.width - .5) * 10}px, ${((e.clientY - r.top) / r.height - .5) * 10}px)`; });
+      b.addEventListener("pointerleave", () => { b.style.transform = ""; });
+    });
+    $$(".pcard").forEach((c) => c.addEventListener("pointermove", (e) => { const r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px"); }));
+    const p = $("#portrait");
+    p.addEventListener("pointermove", (e) => {
+      const r = p.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      p.classList.add("is-tilt"); p.style.setProperty("--ry", ((px - .5) * 14).toFixed(2) + "deg"); p.style.setProperty("--rx", ((.5 - py) * 12).toFixed(2) + "deg");
+      p.style.setProperty("--gx", (px * 100).toFixed(1) + "%"); p.style.setProperty("--gy", (py * 100).toFixed(1) + "%");
+    });
+    p.addEventListener("pointerleave", () => { p.classList.remove("is-tilt"); p.style.setProperty("--rx", "0deg"); p.style.setProperty("--ry", "0deg"); });
+  }
+
+  /* ================= WebGL aurora background ================= */
+  const aurora = { boost: 0 };
+  (function auroraGL() {
+    const host = $("#aurora");
+    if (!window.THREE) { doc.classList.add("no-gl"); return; }
+    let r;
+    try { r = new THREE.WebGLRenderer({ alpha: false, antialias: false, powerPreference: "low-power" }); if (!r.getContext()) throw 0; } catch (e) { doc.classList.add("no-gl"); return; }
+    const T = THREE;
+    const AR = innerWidth < 700 ? .3 : .4;
+    r.setPixelRatio(AR);
+    host.appendChild(r.domElement);
+    const scene = new T.Scene(), cam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const u = { uTime: { value: 0 }, uRes: { value: new T.Vector2(1, 1) }, uMouse: { value: new T.Vector2(.7, .7) }, uScroll: { value: 0 }, uBoost: { value: 0 } };
+    const mat = new T.ShaderMaterial({ uniforms: u, vertexShader: "void main(){gl_Position=vec4(position,1.0);}",
+      fragmentShader: `
+        precision highp float;
+        uniform float uTime, uScroll, uBoost; uniform vec2 uRes, uMouse;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
+          return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+        float fbm(vec2 p){ float v = 0.0, a = .5; for(int i=0;i<4;i++){ v += a*n(p); p = p*2.03 + 7.1; a *= .5; } return v; }
+        void main(){
+          vec2 uv = gl_FragCoord.xy / uRes; vec2 p = uv; p.x *= uRes.x / uRes.y;
+          float t = uTime * .045;
+          vec2 q = vec2(fbm(p*1.3 + vec2(t, -t*.7)), fbm(p*1.3 + vec2(-t*.6, t) + 4.2));
+          vec2 m = (uMouse - .5) * .35;
+          float f = fbm(p*1.1 + q*1.8 + m + vec2(0.0, uScroll*.15));
+          vec3 bg = vec3(.027, .027, .05);
+          vec3 c1 = vec3(.357, .455, 1.0), c2 = vec3(.635, .455, 1.0), c3 = vec3(1.0, .435, .569), c4 = vec3(.275, .878, .816);
+          vec3 col = mix(c1, c2, smoothstep(.25, .75, f));
+          col = mix(col, c3, smoothstep(.55, .9, q.x) * .85);
+          col = mix(col, c4, smoothstep(.72, .95, q.y) * .35);
+          float band = smoothstep(.15, .85, f) * smoothstep(1.0, .35, abs(uv.y - .62 + sin(uv.x*3.0 + t*4.0)*.08));
+          float glow = (.18 + band * .55) * (.55 + .45 * smoothstep(1.2, .1, distance(uv, vec2(.78, .85)))) * (1.0 + uBoost*.6);
+          vec3 o = bg + col * glow * .62;
+          o *= 1.0 - .35*smoothstep(.4, 1.1, distance(uv, vec2(.5)));
+          gl_FragColor = vec4(o, 1.0);
+        }` });
+    scene.add(new T.Mesh(new T.PlaneGeometry(2, 2), mat));
+    const size = () => { r.setSize(innerWidth, innerHeight, false); u.uRes.value.set(innerWidth * AR, innerHeight * AR); };
+    size(); addEventListener("resize", size);
+    const m = { x: .7, y: .7 };
+    addEventListener("pointermove", (e) => { m.x = e.clientX / innerWidth; m.y = 1 - e.clientY / innerHeight; }, { passive: true });
+    let t = 0, last = performance.now();
+    const frame = (now) => {
+      const dt = Math.min(.05, (now - last) / 1000);
+      if (now - last < 32) { requestAnimationFrame(frame); return; }
+      last = now;
+      if (!document.hidden) {
+        if (!reduce) t += dt;
+        u.uTime.value = t;
+        u.uMouse.value.x += (m.x - u.uMouse.value.x) * .03; u.uMouse.value.y += (m.y - u.uMouse.value.y) * .03;
+        u.uScroll.value = scrollY / innerHeight;
+        u.uBoost.value += (aurora.boost - u.uBoost.value) * .05;
+        r.render(scene, cam);
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  })();
+
+  /* ================= 3D constellation around the photo ================= */
+  const NOTE = {
+    "AWS": "OpsMind runs live on EC2 with EBS, S3, IAM and CloudWatch.", "Kubernetes": "Runs workloads and auto-heals failed pods in 25.5 s.",
+    "Docker": "Multi-stage images, generated automatically by OpsMind.", "Terraform": "Infrastructure provisioned as code in CI.",
+    "Python": "OpsMind's backend and the chaos lab.", "GitHub Actions": "Every deploy: tests, build, Terraform, rollout.",
+    "Linux": "Ubuntu/Debian hosts, systemd and cgroups.", "Prometheus": "Telemetry and alerts that trigger self-healing.",
+    "Nginx": "Reverse proxy routing for every service.", "Jenkins": "CI pipelines for build and test.", "FastAPI": "OpsMind's API layer.",
+    "Node.js": "Services and tooling alongside Next.js.", "Next.js": "OpsMind's live dashboard.", "Git": "Version control on every project.", "Bash": "Deployment and ops automation scripts.",
+  };
+  (function constellation() {
+    const stage = $("#stage"), tip = $("#tip");
+    if (!window.THREE) return;
+    let renderer;
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); if (!renderer.getContext()) throw 0; } catch (e) { doc.classList.add("no-gl"); return; }
+    const T = THREE;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 700 ? 1.25 : 1.5)); renderer.setClearColor(0, 0);
+    stage.prepend(renderer.domElement);
+    const scene = new T.Scene(), cam = new T.PerspectiveCamera(36, 1, .1, 50); cam.position.z = 9;
+    const world = new T.Group(); scene.add(world);
+    const spin = new T.Group(); world.add(spin);
+
+    const tile = (logo, hot) => {
+      const S = 256, c = document.createElement("canvas"); c.width = c.height = S; const g = c.getContext("2d");
+      const r = 62, x = 18, y = 18, w = S - 36, hh = S - 36;
+      g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + hh, r); g.arcTo(x + w, y + hh, x, y + hh, r); g.arcTo(x, y + hh, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+      const bg = g.createLinearGradient(0, y, 0, y + hh); bg.addColorStop(0, "rgba(40,40,70,.92)"); bg.addColorStop(1, "rgba(14,14,26,.92)");
+      g.fillStyle = bg; g.fill();
+      const gl = g.createRadialGradient(S / 2, S / 2, 10, S / 2, S / 2, 120); gl.addColorStop(0, logo.c + (hot ? "55" : "26")); gl.addColorStop(1, logo.c + "00"); g.fillStyle = gl; g.fill();
+      g.lineWidth = 3; g.strokeStyle = hot ? logo.c : "rgba(255,255,255,.16)"; g.stroke();
+      g.save(); g.translate(S / 2 - 60, S / 2 - 60); g.scale(5, 5); g.fillStyle = logo.c; g.fill(new Path2D(logo.d)); g.restore();
+      const tex = new T.CanvasTexture(c); tex.anisotropy = 4; return tex;
+    };
+    const radial = (stops) => { const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); };
+    const glowTex = radial([[0, "rgba(162,116,255,.7)"], [.35, "rgba(91,116,255,.25)"], [1, "rgba(91,116,255,0)"]]);
+    const dotTex = radial([[0, "rgba(255,255,255,1)"], [.4, "rgba(255,255,255,.6)"], [1, "rgba(255,255,255,0)"]]);
+
+    // centre: photo (or monogram) disc with gradient ring
+    const faceTex = (() => {
+      const S = 512, c = document.createElement("canvas"); c.width = c.height = S; const g = c.getContext("2d");
+      const ring = g.createLinearGradient(0, 0, S, S); ring.addColorStop(0, "#5b74ff"); ring.addColorStop(.5, "#a274ff"); ring.addColorStop(1, "#ff6f91");
+      g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 6, 0, Math.PI * 2); g.fillStyle = ring; g.fill();
+      g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 22, 0, Math.PI * 2); g.fillStyle = "#0c0c18"; g.fill();
+      const tex = new T.CanvasTexture(c);
+      const drawMono = () => {
+        const bg = g.createRadialGradient(S * .35, S * .3, 10, S / 2, S / 2, S / 2); bg.addColorStop(0, "#2b2b55"); bg.addColorStop(1, "#0c0c18");
+        g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 22, 0, Math.PI * 2); g.fillStyle = bg; g.fill();
+        g.fillStyle = "#fff"; g.font = "italic 400 210px 'Instrument Serif', Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("RP", S / 2, S / 2 + 12);
+        tex.needsUpdate = true;
+      };
+      if (hasPhoto) {
+        const img = new Image();
+        img.onload = () => {
+          g.save(); g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 22, 0, Math.PI * 2); g.clip();
+          const k = Math.max((S - 44) / img.width, (S - 44) / img.height), w = img.width * k, hh = img.height * k;
+          g.drawImage(img, (S - w) / 2, (S - hh) / 2, w, hh); g.restore(); tex.needsUpdate = true;
+        };
+        img.src = FACE;
+      } else { drawMono(); document.fonts?.ready?.then(drawMono); }
+      return tex;
+    })();
+    const face = new T.Sprite(new T.SpriteMaterial({ map: faceTex, transparent: true })); face.scale.setScalar(1.9); world.add(face);
+    const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending })); glow.scale.setScalar(4.4); world.add(glow);
+    glow.renderOrder = -1;
+    const ringCols = [0x5b74ff, 0xa274ff, 0xff6f91];
+    const rings = [[1.35, .2, .1], [2.65, .5, .2], [2.65, -.7, -.5], [3.35, .15, .9]].map(([r, rx, rz], i) => {
+      const m = new T.Mesh(new T.TorusGeometry(r, i === 0 ? .01 : .005, 8, 220), new T.MeshBasicMaterial({ color: ringCols[i % 3], transparent: true, opacity: i === 0 ? .5 : .22 }));
+      m.rotation.set(Math.PI / 2 + rx, 0, rz); world.add(m); return m;
+    });
+
+    const R = 2.65, sprites = [], linkPts = [];
+    LOGOS.forEach((lg, i) => {
+      const y = 1 - (i + .5) / LOGOS.length * 2, rad = Math.sqrt(1 - y * y), th = Math.PI * (3 - Math.sqrt(5)) * i;
+      const p = new T.Vector3(Math.cos(th) * rad * R, y * R, Math.sin(th) * rad * R);
+      const base = tile(lg, false);
+      const sp = new T.Sprite(new T.SpriteMaterial({ map: base, transparent: true, depthWrite: false }));
+      sp.position.copy(p); sp.scale.setScalar(.8); sp.userData = { logo: lg, base: .8, k: 1, tex: base, hot: null };
+      spin.add(sp); sprites.push(sp);
+      linkPts.push(p.clone().multiplyScalar(.4), p.clone().multiplyScalar(.86));
+    });
+    spin.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(linkPts), new T.LineBasicMaterial({ color: 0xa274ff, transparent: true, opacity: .2 })));
+    const pulseGeo = new T.BufferGeometry(), pulsePos = new Float32Array(LOGOS.length * 3);
+    pulseGeo.setAttribute("position", new T.BufferAttribute(pulsePos, 3));
+    spin.add(new T.Points(pulseGeo, new T.PointsMaterial({ color: 0xffffff, size: .12, map: dotTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending })));
+    const phase = LOGOS.map(() => Math.random());
+    const dp = []; for (let i = 0; i < 300; i++) dp.push(new T.Vector3().randomDirection().multiplyScalar(1.6 + Math.random() * 2.8));
+    const dust = new T.Points(new T.BufferGeometry().setFromPoints(dp), new T.PointsMaterial({ color: 0xc9b8ff, size: .03, map: dotTex, transparent: true, opacity: .7, depthWrite: false, blending: T.AdditiveBlending }));
+    world.add(dust);
+
+    let W = 1, H = 1;
+    const size = () => { W = stage.clientWidth; H = stage.clientHeight; renderer.setSize(W, H, false); cam.aspect = W / H; cam.updateProjectionMatrix(); };
+    size(); new ResizeObserver(size).observe(stage);
+    const ray = new T.Raycaster(), ndc = new T.Vector2(9, 9);
+    let drag = false, lx = 0, ly = 0, vx = 0, vy = 0, rotX = .25, hover = null, moved = 0, tx = 0, ty = 0;
+    stage.addEventListener("pointerdown", (e) => { drag = true; moved = 0; lx = e.clientX; ly = e.clientY; });
+    addEventListener("pointerup", () => { drag = false; });
+    stage.addEventListener("pointermove", (e) => {
+      const r = stage.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); tx = ndc.x; ty = ndc.y;
+      if (drag) { const dx = e.clientX - lx, dy = e.clientY - ly; vx += dx * .00045; vy += dy * .00035; moved += Math.abs(dx) + Math.abs(dy); lx = e.clientX; ly = e.clientY; }
+    });
+    stage.addEventListener("pointerleave", () => { ndc.set(9, 9); tx = 0; ty = 0; });
+    stage.addEventListener("click", () => { if (hover && moved < 6) openChat("Tell me about his " + hover.userData.logo.n + " experience"); });
+    const v = new T.Vector3();
+    let on = true, t = 0, fc = 0, last = performance.now();
+    function frame(now) {
+      const dt = Math.min(.05, (now - last) / 1000); last = now;
+      if (on) {
+        if (!reduce) t += dt;
+        vx *= .93; vy *= .93;
+        spin.rotation.y += (reduce ? 0 : dt * .16) + vx;
+        rotX = Math.max(-.9, Math.min(.9, rotX + vy)); spin.rotation.x += (rotX - spin.rotation.x) * .1;
+        world.rotation.y += (tx * .22 - world.rotation.y) * .05; world.rotation.x += (-ty * .16 - world.rotation.x) * .05;
+        face.material.rotation = -world.rotation.y * .2;
+        glow.scale.setScalar(4.3 + Math.sin(t * 1.8) * .3);
+        rings[0].rotation.z += dt * .4; dust.rotation.y = -t * .04;
+        for (let i = 0; i < LOGOS.length; i++) { const a = linkPts[i * 2], b = linkPts[i * 2 + 1], f = (phase[i] + t * .35) % 1; pulsePos[i * 3] = a.x + (b.x - a.x) * f; pulsePos[i * 3 + 1] = a.y + (b.y - a.y) * f; pulsePos[i * 3 + 2] = a.z + (b.z - a.z) * f; }
+        pulseGeo.attributes.position.needsUpdate = true;
+        fc++;
+        const h = ndc.x > 2 ? null : (fc % 3 === 0 ? (ray.setFromCamera(ndc, cam), (ray.intersectObjects(sprites, false)[0] || {}).object || null) : hover);
+        if (h !== hover) {
+          if (hover) hover.material.map = hover.userData.tex;
+          hover = h; tip.classList.toggle("is-on", !!h);
+          if (h) { if (!h.userData.hot) h.userData.hot = tile(h.userData.logo, true); h.material.map = h.userData.hot; tip.querySelector("b").textContent = h.userData.logo.n; tip.querySelector("span").textContent = NOTE[h.userData.logo.n] || ""; }
+        }
+        for (const sp of sprites) { sp.getWorldPosition(v); const depth = (v.z + R) / (2 * R); sp.material.opacity = .25 + depth * .75; const goal = sp === hover ? 1.35 : 1; sp.userData.k += (goal - sp.userData.k) * .2; sp.scale.setScalar(sp.userData.base * sp.userData.k); }
+        if (hover) { hover.getWorldPosition(v); v.project(cam); tip.style.left = ((v.x + 1) / 2 * W) + "px"; tip.style.top = ((1 - v.y) / 2 * H) + "px"; }
+        renderer.render(scene, cam);
+      }
+      requestAnimationFrame(frame);
+    }
+    new IntersectionObserver(([e]) => { on = e.isIntersecting; }).observe(stage);
+    requestAnimationFrame(frame);
+  })();
+
+  /* ---------- Project visuals ---------- */
+  (function loop() {
+    const items = $$("#loop li");
+    if (reduce) { items.forEach((li) => li.classList.add("is-done")); return; }
+    let i = 0, h = null;
+    const step = () => { items.forEach((li, k) => { li.classList.toggle("is-done", k < i); li.classList.toggle("is-on", k === i); }); i = (i + 1) % (items.length + 1); h = setTimeout(step, i === 0 ? 2200 : 950); };
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && !h) { i = 0; step(); } else if (!e.isIntersecting && h) { clearTimeout(h); h = null; } }, { threshold: .3 }).observe($("#loop"));
+  })();
+  (function flow() {
+    const items = $$("#flow li"), done = () => items.forEach((li) => { li.classList.remove("is-run"); li.classList.add("is-done"); });
+    if (reduce) return done();
+    done();
+    let i = -1, h = null;
+    const next = () => { if (i >= 0) { items[i].classList.remove("is-run"); items[i].classList.add("is-done"); } i++; if (i < items.length) { items[i].classList.add("is-run"); h = setTimeout(next, 700); } else h = setTimeout(() => { items.forEach((li) => li.classList.remove("is-done")); i = -1; next(); }, 2400); };
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && !h) { items.forEach((li) => li.classList.remove("is-done", "is-run")); i = -1; next(); } else if (!e.isIntersecting && h) { clearTimeout(h); h = null; done(); } }, { threshold: .3 }).observe($("#flow"));
+  })();
+  new IntersectionObserver(([e], o) => { if (!e.isIntersecting) return; const b = $$("#barsBox .track i"); b[0].style.setProperty("--v", "1"); b[1].style.setProperty("--v", ".07"); o.disconnect(); }, { threshold: .3 }).observe($("#barsBox"));
+
+  (function stock() {
+    const rows = $$("#stock li").map((li) => ({ li, bar: li.querySelector("i"), num: li.querySelector("b"), v: +li.querySelector("b").textContent }));
+    const paint = (r) => { r.bar.style.transform = `scaleX(${r.v / 100})`; r.num.textContent = r.v; r.li.classList.toggle("low", r.v < 15); };
+    rows.forEach(paint);
+    if (reduce) return;
+    let h = null;
+    const step = () => {
+      const r = rows[(Math.random() * rows.length) | 0];
+      r.v = r.v < 15 ? 90 : Math.max(6, r.v - (8 + ((Math.random() * 14) | 0)));
+      paint(r); h = setTimeout(step, 1100);
+    };
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && !h) step(); else if (!e.isIntersecting && h) { clearTimeout(h); h = null; } }, { threshold: .3 }).observe($("#stock"));
+  })();
+  (function aq() {
+    const host = $("#aq"), Wd = 320, Ht = 140, N = 28;
+    const act = [], pred = [];
+    for (let i = 0; i < N; i++) { const base = 120 + 55 * Math.sin(i / 3.2) + 25 * Math.sin(i / 1.3 + 1); act.push(base); pred.push(base + 10 * Math.sin(i * 1.7 + .5)); }
+    const lo = 40, hi = 220, x = (i) => (i / (N - 1)) * Wd, y = (v) => Ht - ((v - lo) / (hi - lo)) * Ht;
+    const line = (a) => a.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+    const grid = [50, 100, 150, 200].map((v) => `<line x1="0" x2="${Wd}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${Wd + 4}" y="${(y(v) + 3).toFixed(1)}">${v}</text>`).join("");
+    host.innerHTML = `<svg viewBox="0 0 ${Wd + 24} ${Ht + 4}" role="img" aria-label="Sample chart of actual AQI readings against the model's predicted AQI"><g class="grid">${grid}</g><path class="area" d="${line(pred)} L ${Wd} ${Ht} L 0 ${Ht} Z"/><path class="act" d="${line(act)}"/><path class="pred" d="${line(pred)}" stroke-dasharray="5 5"/></svg><p class="k"><span><i></i>Actual</span><span><i class="p"></i>Predicted</span></p>`;
+    const a = host.querySelector(".act"), len = a.getTotalLength();
+    if (reduce) return;
+    a.style.strokeDasharray = len; a.style.strokeDashoffset = len;
+    new IntersectionObserver(([e], o) => { if (e.isIntersecting) { a.style.strokeDashoffset = 0; o.disconnect(); } }, { threshold: .4 }).observe(host);
+  })();
+
+  /* ---------- Skills ---------- */
+  const CAPS = [
+    { tab: "Software", title: "Software engineering", proof: "OpsMind's services are tested and linted in CI on every push.", core: ["Python", "Data structures & algorithms", "OOP", "REST API design", "Unit testing"], more: ["Operating systems", "Computer networks", "DBMS & SQL", "System design basics"] },
+    { tab: "Backend", title: "Backend & web", proof: "OpsMind's API is FastAPI; its dashboard is Next.js.", core: ["FastAPI", "Microservices", "REST APIs"], more: ["Node.js", "Next.js", "React", "JavaScript", "GitHub OAuth"] },
+    { tab: "Cloud", title: "AWS", proof: "OpsMind runs live on EC2 at 99.99% uptime.", core: ["EC2", "Elastic IP", "EBS", "S3", "VPC", "Security groups", "IAM", "CloudWatch"], more: [] },
+    { tab: "Containers", title: "Docker & Kubernetes", proof: "OpsMind generates Dockerfiles and K8s manifests and heals failed pods.", core: ["Docker", "Kubernetes", "Deployments & Services", "Ingress", "Rolling updates"], more: ["Docker Compose", "Linux cgroups"] },
+    { tab: "CI/CD", title: "CI/CD & IaC", proof: "Push to production: tests, Docker, Terraform, rollout.", core: ["GitHub Actions", "Terraform", "Git", "Bash"], more: ["Jenkins", "systemd"] },
+    { tab: "SRE & AI", title: "Reliability & AI", proof: "MTTR cut from 45 min to 25.5 s with LLM diagnosis behind 2 guardrails.", core: ["Chaos engineering", "Prometheus", "Incident response", "Guardrails"], more: ["Groq Llama-3", "Nginx", "DNS & SSH"] },
+  ];
+  (function skills() {
+    const seg = $("#seg"), panel = $("#skillPanel");
+    CAPS.forEach((c, i) => {
+      const b = document.createElement("button"); b.type = "button"; b.id = "sk-" + i; b.textContent = c.tab;
+      b.setAttribute("role", "tab"); b.setAttribute("aria-controls", "skillPanel");
+      b.addEventListener("click", () => show(i));
+      b.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); const n = (i + (e.key === "ArrowRight" ? 1 : -1) + CAPS.length) % CAPS.length; show(n); seg.children[n].focus(); } });
+      seg.appendChild(b);
+    });
+    function show(i) {
+      [...seg.children].forEach((b, k) => { b.setAttribute("aria-selected", String(k === i)); b.tabIndex = k === i ? 0 : -1; });
+      panel.setAttribute("aria-labelledby", "sk-" + i);
+      const c = CAPS[i]; let n = 0;
+      panel.innerHTML = `<div><h3>${esc(c.title)}</h3><p class="proof">${esc(c.proof)}</p></div>
+        <ul class="skilllist">${c.core.map((s) => `<li class="core" style="--i:${n++}">${esc(s)}</li>`).join("")}${c.more.map((s) => `<li style="--i:${n++}">${esc(s)}</li>`).join("")}</ul>
+        <p class="legend"><span><i></i>Core</span>${c.more.length ? '<span><i class="w"></i>Working knowledge</span>' : ""}</p>`;
+    }
+    show(0);
+  })();
+
+  /* ---------- Role-fit analyzer ---------- */
+  const SK = [
+    ["Python", ["python"], 1, "writes OpsMind's backend in Python"],
+    ["FastAPI", ["fastapi"], 1, "built OpsMind's API on FastAPI"],
+    ["Backend development", ["backend", "back-end", "back end", "server-side"], 1, "builds and runs backend services end to end"],
+    ["REST APIs", ["rest", "restful", "api", "apis"], 1, "designs REST endpoints for OpsMind"],
+    ["Microservices", ["microservice", "microservices"], 1, "deploys multi-service apps behind Nginx"],
+    ["Node.js", ["node.js", "nodejs", "node js"], .8, "works in Node.js"],
+    ["JavaScript", ["javascript", "ecmascript"], .8, "writes JavaScript for Node.js and Next.js"],
+    ["React / Next.js", ["react", "reactjs", "next.js", "nextjs"], .8, "built OpsMind's dashboard in Next.js"],
+    ["Full-stack", ["frontend", "front-end", "front end", "full stack", "full-stack", "fullstack"], .8, "ships the dashboard as well as the services"],
+    ["DSA", ["data structures", "data structure", "algorithms", "algorithm", "dsa", "problem solving", "problem-solving"], .8, "has solid DSA and CS fundamentals"],
+    ["OOP", ["oop", "object oriented", "object-oriented"], .8, "uses object-oriented design in Python"],
+    ["System design", ["system design", "distributed systems", "scalable", "scalability", "high availability"], .8, "designed OpsMind as a closed-loop distributed system"],
+    ["SQL / DBMS", ["sql", "dbms", "database", "databases", "rdbms"], .8, "knows DBMS fundamentals and SQL"],
+    ["Linux", ["linux", "ubuntu", "debian", "unix"], 1, "administers Ubuntu/Debian hosts on EC2"],
+    ["Bash / scripting", ["bash", "shell", "shell scripting", "scripting"], 1, "automates deployments with Bash"],
+    ["Networking", ["networking", "computer networks", "tcp/ip", "tcp", "dns", "http", "https"], 1, "runs Nginx, DNS and SSH on Linux"],
+    ["Git", ["git", "github", "version control", "gitlab"], 1, "uses Git on every project"],
+    ["CI/CD", ["ci/cd", "cicd", "ci cd", "continuous integration", "continuous delivery", "continuous deployment", "pipeline", "pipelines"], 1, "built a full push-to-production pipeline"],
+    ["GitHub Actions", ["github actions"], 1, "runs every deploy through GitHub Actions"],
+    ["Jenkins", ["jenkins"], .8, "has built pipelines in Jenkins"],
+    ["DevOps", ["devops", "dev ops"], 1, "owns the path from commit to production"],
+    ["Docker", ["docker", "container", "containers", "containerization", "containerisation", "containerized"], 1, "generates multi-stage Docker images automatically"],
+    ["Kubernetes", ["kubernetes", "k8s"], 1, "runs and auto-heals workloads on Kubernetes"],
+    ["Terraform / IaC", ["terraform", "infrastructure as code", "iac"], 1, "provisions infrastructure with Terraform"],
+    ["AWS", ["aws", "amazon web services", "ec2", "s3", "iam", "vpc", "cloudwatch", "ebs"], 1, "runs OpsMind live on AWS"],
+    ["Cloud", ["cloud", "cloud-native", "cloud native"], 1, "builds and operates cloud infrastructure"],
+    ["Monitoring", ["monitoring", "observability", "prometheus", "alerting", "alerts", "metrics", "logging", "telemetry"], 1, "wires Prometheus and CloudWatch into alerts"],
+    ["SRE", ["sre", "site reliability", "reliability", "incident", "incidents", "on-call", "on call", "uptime", "sla", "slo", "slos", "mttr", "availability"], 1, "cut MTTR from 45 min to 25.5 s at 99.99% uptime"],
+    ["Chaos engineering", ["chaos", "resilience", "fault injection"], 1, "benchmarked 20+ chaos scenarios"],
+    ["AI / LLMs", ["ai", "llm", "llms", "genai", "gen ai", "generative ai", "aiops", "artificial intelligence"], .8, "uses an LLM to diagnose incidents safely"],
+    ["Nginx", ["nginx", "reverse proxy", "load balancer", "load balancing", "ingress"], 1, "routes services through Nginx and Ingress"],
+    ["Security", ["security", "devsecops", "least privilege", "guardrails"], .8, "enforces IAM and resource-limit guardrails"],
+    ["Testing", ["testing", "unit test", "unit tests", "tdd", "automated tests", "test automation"], .8, "runs tests and linting in CI"],
+    ["Automation", ["automation", "automate", "automated"], 1, "automates deploys, recovery and infrastructure"],
+    ["Machine learning", ["machine learning", "ml", "scikit-learn", "sklearn", "pandas", "numpy", "data analysis", "predictive", "prediction"], .7, "built an air quality prediction model in Python"],
+    ["CRUD apps", ["crud", "inventory", "billing", "management system"], .8, "built a grocery management system with inventory and billing"],
+  ];
+  const GAPS = [
+    ["Java", ["java"]], ["C++", ["c\\+\\+", "cpp"]], ["C#", ["c#", "\\.net", "dotnet"]], ["Go", ["golang", "go lang"]], ["TypeScript", ["typescript"]],
+    ["Rust", ["rust"]], ["Ruby", ["ruby", "rails"]], ["PHP", ["php", "laravel"]], ["Azure", ["azure"]], ["GCP", ["gcp", "google cloud"]],
+    ["Ansible", ["ansible"]], ["Helm", ["helm"]], ["Grafana", ["grafana"]], ["Kafka", ["kafka"]], ["Redis", ["redis"]],
+    ["MongoDB", ["mongodb", "mongo"]], ["PostgreSQL", ["postgresql", "postgres"]], ["MySQL", ["mysql"]], ["Spring Boot", ["spring", "spring boot"]], ["Django", ["django"]],
+    ["GraphQL", ["graphql"]], ["Deep learning", ["deep learning", "pytorch", "tensorflow", "keras"]], ["Mobile", ["android", "ios", "kotlin", "swift"]],
+    ["Angular / Vue", ["angular", "vue"]], ["EKS / ECS", ["eks", "ecs", "fargate"]], ["Serverless", ["lambda", "serverless"]],
+  ];
+  const mk = (a, raw) => new RegExp("(^|[^a-z0-9])" + (raw ? a : reEsc(a)) + "(?![a-z0-9])", "i");
+  const SKR = SK.map(([n, al, w, p]) => ({ n, w, p, re: al.map((a) => mk(a)) }));
+  const GPR = GAPS.map(([n, al]) => ({ n, re: al.map((a) => mk(a, true)) }));
+  const ROLES = [["Site Reliability Engineer", /\bsre\b|site reliability/i], ["DevOps Engineer", /devops/i], ["Cloud Engineer", /cloud engineer|cloud platform|cloud infrastructure/i], ["Backend Engineer", /back-?end/i], ["Full-stack Engineer", /full[- ]?stack/i], ["Software Engineer", /software|\bsde\b|developer|engineer/i]];
+  function analyze(text) {
+    const matched = SKR.filter((s) => s.re.some((r) => r.test(text))), gaps = GPR.filter((g) => g.re.some((r) => r.test(text)));
+    const total = matched.length + gaps.length; if (!total) return null;
+    const score = Math.round(100 * matched.reduce((a, s) => a + s.w, 0) / total);
+    const role = (ROLES.find(([, re]) => re.test(text)) || ["this role"])[0];
+    return { matched, gaps, score, role, why: [...matched].sort((a, b) => b.w - a.w).slice(0, 3) };
+  }
+  const jd = $("#jd"), report = $("#report"), jdErr = $("#jdErr");
+  const EXAMPLE = "Software Engineer, Cloud Platform (example)\n\nBuild backend services in Python and FastAPI, ship them with GitHub Actions and Docker, and run them on Kubernetes in AWS. Improve monitoring with Prometheus and reduce MTTR. Terraform required; Golang and Grafana are a plus. Strong DSA and system design expected.";
+  const count = () => { const n = jd.value.trim() ? jd.value.trim().split(/\s+/).length : 0; $("#jdCount").textContent = n + (n === 1 ? " word" : " words"); };
+  jd.addEventListener("input", () => { count(); jdErr.textContent = ""; });
+  $("#jdExample").addEventListener("click", () => { jd.value = EXAMPLE; count(); jdErr.textContent = ""; jd.focus(); });
+  $("#jdClear").addEventListener("click", () => { jd.value = ""; count(); report.innerHTML = ""; jdErr.textContent = ""; jd.focus(); });
+  $("#jdForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = jd.value.trim();
+    if (text.split(/\s+/).length < 5) { jdErr.textContent = "Paste a few lines of the job description (at least 5 words)."; return; }
+    jdErr.textContent = ""; aurora.boost = 1;
+    report.innerHTML = `<div class="glass report"><div class="skel"><i style="width:40%"></i><i style="width:85%"></i><i style="width:65%"></i></div></div>`;
+    await wait(reduce ? 150 : 1300);
+    aurora.boost = 0;
+    const r = analyze(text);
+    if (!r) { report.innerHTML = `<div class="glass report"><div class="verdict"><h4>No technical requirements found</h4><p>Try pasting the "Requirements" part of the posting.</p></div></div>`; return; }
+    const verdict = r.score >= 80 ? "Strong fit" : r.score >= 60 ? "Good fit" : r.score >= 40 ? "Partial fit" : "Stretch role";
+    const C = 2 * Math.PI * 46;
+    report.innerHTML = `<div class="glass report">
+      <div class="report__top">
+        <div class="ring"><svg viewBox="0 0 108 108"><circle class="bg" cx="54" cy="54" r="46"/><circle class="fg" id="ringFg" cx="54" cy="54" r="46" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><b class="num" id="ringNum">0%</b></div>
+        <div class="verdict"><h4>${verdict} for ${esc(r.role)}</h4><p>${r.matched.length} of ${r.matched.length + r.gaps.length} requirements matched.</p></div>
+      </div>
+      <div class="rgroup"><h5>Matched</h5><ul class="rchips">${r.matched.map((s, i) => `<li class="ok" style="--i:${i}">${esc(s.n)}</li>`).join("")}</ul></div>
+      ${r.gaps.length ? `<div class="rgroup"><h5>Still learning</h5><ul class="rchips">${r.gaps.map((g, i) => `<li class="gap" style="--i:${i}">${esc(g.n)}</li>`).join("")}</ul></div>` : ""}
+      <div class="rgroup"><h5>Why Rohit</h5><ul class="why">${r.why.map((s) => `<li><span><strong>${esc(s.n)}:</strong> Rohit ${esc(s.p)}.</span></li>`).join("")}</ul></div>
+      <div><a class="btn btn--glow btn--sm" href="https://wa.me/917840938958?text=${encodeURIComponent(`Hi Rohit, I checked your fit for a ${r.role} role on your portfolio (${r.score}% match). Can we talk?`)}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-whatsapp"/></svg> Discuss this role</a></div>
+    </div>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $("#ringFg").style.strokeDashoffset = (C * (1 - r.score / 100)).toFixed(1);
+      const num = $("#ringNum"), t0 = performance.now();
+      const step = (now) => { const p = Math.min(1, (now - t0) / 1300); num.textContent = Math.round(r.score * (1 - Math.pow(1 - p, 3))) + "%"; if (p < 1) requestAnimationFrame(step); };
+      reduce ? (num.textContent = r.score + "%") : requestAnimationFrame(step);
+    }));
+  });
+  $("#copyMail").addEventListener("click", async (e) => {
+    const label = e.currentTarget.querySelector("span");
+    try { await navigator.clipboard.writeText("rohitpujari7114@gmail.com"); label.textContent = "Copied"; }
+    catch { const r = document.createRange(); r.selectNodeContents($("#addr")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); label.textContent = "Selected"; }
+    setTimeout(() => (label.textContent = "Copy"), 1600);
+  });
+
+  /* ---------- AI chat ---------- */
+  const KB = [
+    { k: ["sde", "software engineer", "dsa", "algorithm", "data structure", "coding", "developer", "programming", "language", "oop", "system design", "backend", "frontend", "full stack", "fullstack", "python", "fastapi", "node", "next"],
+      a: "Rohit's **software engineering** stack:\n• **Languages:** Python, JavaScript, Bash, SQL\n• **Backend:** FastAPI, Node.js, REST APIs, microservices\n• **Frontend:** Next.js, React\n• **Fundamentals:** DSA, OOP, OS, networks, DBMS, system design basics\n\nOpsMind's API is FastAPI and its dashboard is Next.js." },
+    { k: ["opsmind", "aiops", "self-heal", "self heal", "heal", "remediat", "groq", "llama", "featured"],
+      a: "**OpsMind** deploys any repo to Kubernetes on AWS, injects chaos faults, and heals failures automatically. **Groq Llama-3** finds the cause and **two deterministic guardrails** approve each fix before a zero-downtime rolling restart. Recovery: **45 min → 25.5 s (−98.6%)**." },
+    { k: ["grocery", "inventory", "billing", "management system", "store"],
+      a: "The **Grocery Management System** keeps a store's products, stock and billing in one place: add and update items, record sales, generate bills and spot low stock early." },
+    { k: ["air quality", "aqi", "pollution", "prediction", "predict", "machine learning", "ml", "data science"],
+      a: "The **Air Quality Prediction** project uses **machine learning in Python** to estimate air quality (AQI) from pollutant and weather data, so you can see where it is heading." },
+    { k: ["projects", "portfolio", "built", "work"],
+      a: "Rohit's projects:\n• **OpsMind** (AIOps, self-healing Kubernetes on AWS)\n• **Deployment Pipeline** (push-to-production on EC2)\n• **Chaos Security Lab** (20 attack scenarios)\n• **Grocery Management System** (inventory and billing)\n• **Air Quality Prediction** (machine learning)" },
+    { k: ["chaos", "security lab", "benchmark", "exploit", "attack"],
+      a: "The **Chaos Security Lab** runs 20 scenarios (memory floods, CPU throttling, resource exhaustion) and measures how fast the platform recovers. Built with Python, cgroups, the Kubernetes API and Prometheus." },
+    { k: ["pipeline", "deployment", "deploy", "ci/cd", "cicd", "github actions", "jenkins", "terraform", "nginx", "git", "bash"],
+      a: "Rohit's pipelines run **tests → Docker build → Terraform → Kubernetes rollout → health checks**, on GitHub Actions or Jenkins. His deployment platform on EC2 adds GitHub OAuth, Nginx routing and persistent EBS storage." },
+    { k: ["kubernetes", "k8s", "pod", "docker", "container"],
+      a: "Rohit runs workloads on **Docker and Kubernetes**: Deployments, Services, Ingress, rolling updates and probes. OpsMind generates manifests automatically and heals crashed pods under a 2 GB memory cap." },
+    { k: ["aws", "ec2", "cloud", "s3", "iam", "vpc", "cloudwatch", "gcp", "azure"],
+      a: "Rohit's cloud is **AWS**: EC2, Elastic IP, EBS, S3, VPC, security groups, IAM and CloudWatch, at **99.99% uptime**. GCP and Azure aren't on his profile yet; the concepts carry over directly." },
+    { k: ["linux", "prometheus", "monitor", "observab"],
+      a: "Rohit runs **Ubuntu/Debian** hosts with systemd and cgroups, and uses **Prometheus** and CloudWatch for telemetry. Those alerts are what trigger OpsMind's self-healing." },
+    { k: ["hire", "open to", "available", "job", "role", "opportunit", "position", "freelance", "client", "project"],
+      a: "Yes, Rohit is **open to SDE, Backend, Cloud/DevOps and SRE roles**, and to **freelance projects**. WhatsApp **+91 78409 38958** or email **rohitpujari7114@gmail.com**." },
+    { k: ["contact", "email", "phone", "reach", "whatsapp", "call", "linkedin", "mail"],
+      a: "• **Email:** rohitpujari7114@gmail.com\n• **WhatsApp:** +91 78409 38958\n• **LinkedIn:** linkedin.com/in/rohit-pujari-149723273\n• **GitHub:** github.com/Rodevops07" },
+    { k: ["where", "location", "based", "city", "mumbai", "relocat", "remote"], a: "Rohit is based in **Palghar / Mumbai, India** (IST)." },
+    { k: ["experience", "year", "background", "about", "who"],
+      a: "Rohit is a software engineer with **1+ year of hands-on experience** building and running production workloads on AWS, from code to CI/CD, Kubernetes and incident recovery." },
+    { k: ["mttr", "uptime", "metric", "number", "result", "impact"], a: "**99.99%** uptime, **25.5 s** recovery (down from 45 min), **20+** chaos scenarios." },
+    { k: ["resume", "cv"], a: "WhatsApp **+91 78409 38958** or email **rohitpujari7114@gmail.com** for his latest resume." },
+    { k: ["hi", "hello", "hey", "namaste"], a: "Hi! Ask me about Rohit's skills, OpsMind, his AWS and Kubernetes work, or how to hire him." },
+  ];
+  const kbRe = KB.map((e) => ({ a: e.a, k: e.k.map((k) => ({ len: k.length, re: k.length <= 3 ? new RegExp("(^|[^a-z0-9])" + reEsc(k) + "(?![a-z0-9])", "i") : null, s: k })) }));
+  const answer = (q) => { const s = q.toLowerCase(); let best = null, score = 0; for (const e of kbRe) { let sc = 0; for (const k of e.k) if (k.re ? k.re.test(s) : s.includes(k.s)) sc += k.len; if (sc > score) { score = sc; best = e; } } return best ? best.a : "I don't have that detail. Ask about Rohit's **skills**, **projects**, **AWS / Kubernetes**, or **how to hire him**."; };
+  const chat = $("#chat"), log = $("#chatLog"), cin = $("#chatIn"), fab = $("#fab"), nudge = $("#nudge");
+  let greeted = false, busy = false, opener = null;
+  const bubble = (cls, html) => { const d = document.createElement("div"); d.className = "msg " + cls; d.innerHTML = html; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  async function say(text) {
+    const ty = bubble("msg--bot msg--typing", "<i></i><i></i><i></i>");
+    aurora.boost = .6; await wait(reduce ? 0 : 500); aurora.boost = 0; ty.remove();
+    const d = bubble("msg--bot", "");
+    if (reduce) { d.innerHTML = md(text); return; }
+    for (let i = 0; i <= text.length; i += 3) { d.innerHTML = md(text.slice(0, i)); log.scrollTop = log.scrollHeight; await wait(11); }
+    d.innerHTML = md(text); log.scrollTop = log.scrollHeight;
+  }
+  async function ask(q) { q = q.trim(); if (!q || busy) return; busy = true; bubble("msg--me", esc(q)); cin.value = ""; await say(answer(q)); busy = false; }
+  function openChat(q) {
+    if (chat.hidden) opener = document.activeElement;
+    chat.hidden = false; nudge.hidden = true; fab.setAttribute("aria-expanded", "true");
+    if (!greeted) { greeted = true; bubble("msg--bot", md("Hi, I'm **Rohit's AI assistant**. Ask me about his skills, projects or experience.")); }
+    if (q) ask(q); else cin.focus();
+  }
+  function closeChat() { chat.hidden = true; fab.setAttribute("aria-expanded", "false"); opener?.focus?.(); }
+  $$("[data-chat]").forEach((b) => b.addEventListener("click", () => openChat()));
+  $("#chatX").addEventListener("click", closeChat);
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !chat.hidden) closeChat(); });
+  $("#chatForm").addEventListener("submit", (e) => { e.preventDefault(); ask(cin.value); });
+  $$("#chatChips button").forEach((b) => b.addEventListener("click", () => ask(b.textContent)));
+  $("#nudgeX").addEventListener("click", (e) => { e.stopPropagation(); nudge.hidden = true; });
+  nudge.addEventListener("click", () => openChat());
+  setTimeout(() => { if (chat.hidden && !greeted) { nudge.hidden = false; setTimeout(() => { nudge.hidden = true; }, 9000); } }, 7000);
+
+  /* ================= Motion: Lenis + GSAP ================= */
+  const G = window.gsap, ST = window.ScrollTrigger, loader = $("#loader");
+  function splitWords(el) {
+    const walk = (node) => [...node.childNodes].forEach((n) => {
+      if (n.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(" ")); return; }
+          const w = document.createElement("span"); w.className = "w"; const i = document.createElement("span"); i.textContent = part; w.appendChild(i); frag.appendChild(w);
+        });
+        node.replaceChild(frag, n);
+      } else if (n.nodeType === 1 && !n.classList.contains("w")) walk(n);
+    });
+    walk(el); return $$(".w > span", el);
+  }
+  if (!G || !ST || reduce) { loader.remove(); return; }
+  G.registerPlugin(ST);
+  doc.classList.add("gsap-on");
+  let lenis = null, vel = 0;
+  if (window.Lenis) {
+    lenis = new Lenis({ lerp: .09 });
+    lenis.on("scroll", (e) => { ST.update(); vel = e.velocity || 0; });
+    G.ticker.add((time) => lenis.raf(time * 1000)); G.ticker.lagSmoothing(0);
+    $$("[data-scr]").forEach((a) => a.addEventListener("click", (e) => {
+      const id = a.getAttribute("href"), el = id && id.length > 1 ? $(id) : null;
+      if (id === "#top" || el) { e.preventDefault(); lenis.scrollTo(id === "#top" ? 0 : el, { offset: -70, duration: 1.5 }); }
+    }));
+  }
+  const heroBits = $$(".hero [data-reveal]"); heroBits.forEach((el) => el.classList.remove("pending"));
+  G.set(nameChars, { yPercent: 110, rotateX: -85, opacity: 0 }); G.set(heroBits, { autoAlpha: 0, y: 22 }); G.set("#stage", { autoAlpha: 0, scale: .8, rotate: -8 });
+  const intro = () => G.timeline({ defaults: { ease: "expo.out" } })
+    .to(nameChars, { yPercent: 0, rotateX: 0, opacity: 1, duration: 1.4, stagger: .05 })
+    .to("#stage", { autoAlpha: 1, scale: 1, rotate: 0, duration: 2 }, "-=1.2")
+    .to(heroBits, { autoAlpha: 1, y: 0, duration: 1.1, stagger: .08 }, "-=1.7");
+  let seen = false;
+  try { seen = sessionStorage.getItem("rp-intro6") === "1"; sessionStorage.setItem("rp-intro6", "1"); } catch (e) {}
+  if (seen) { loader.remove(); intro(); }
+  else {
+    loader.hidden = false; lenis?.stop();
+    const n = $("#loaderN"), bar = $("#loaderBar"), o = { v: 0 };
+    G.set(loader, { clipPath: "inset(0 0 0% 0)" });
+    G.from(".loader__mark span", { yPercent: 110, duration: 1, ease: "expo.out" });
+    G.timeline()
+      .to(o, { v: 100, duration: 1.4, ease: "power2.inOut", onUpdate: () => { n.textContent = String(Math.round(o.v)).padStart(3, "0"); bar.style.transform = `scaleX(${o.v / 100})`; } })
+      .to(".loader__mark", { autoAlpha: 0, y: -16, duration: .45, ease: "power2.in" }, "-=.2")
+      .to(loader, { clipPath: "inset(0 0 100% 0)", duration: 1.05, ease: "expo.inOut", onStart: intro })
+      .add(() => { loader.remove(); lenis?.start(); });
+  }
+  let lastK = 0;
+  G.ticker.add(() => { const k = Math.max(-1, Math.min(1, vel / 30)); if (Math.abs(k - lastK) < .01) return; lastK = k; nameChars.forEach((c, i) => { c.style.translate = `0 ${(k * (i % 2 ? 10 : -10)).toFixed(1)}px`; }); });
+  $$(".title").forEach((t) => { const ws = splitWords(t); G.from(ws, { yPercent: 115, duration: 1.2, ease: "expo.out", stagger: .06, scrollTrigger: { trigger: t, start: "top 88%" } }); });
+  $$("[data-count]").forEach((el) => {
+    const tn = el.firstChild, end = parseFloat(tn.textContent), dec = (tn.textContent.split(".")[1] || "").length, o = { v: 0 };
+    ST.create({ trigger: el, start: "top 92%", once: true, onEnter: () => G.to(o, { v: end, duration: 2, ease: "expo.out", onUpdate: () => { tn.textContent = o.v.toFixed(dec); } }) });
+  });
+  G.to("#stage", { yPercent: 16, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+  G.to("#aurora", { "--au": .55, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+  G.from("#portrait", { rotateY: -25, rotateX: 8, scale: .9, ease: "expo.out", duration: 1.6, scrollTrigger: { trigger: "#about", start: "top 75%" } });
+
+  // band reacts to scroll speed
+  (function kinetic() {
+    const el = $("#band"); let x = 0, dir = 1, skew = 0;
+    G.ticker.add(() => {
+      if (Math.abs(vel) > .5) dir = vel > 0 ? 1 : -1;
+      x -= dir * (.6 + Math.min(12, Math.abs(vel) * .3));
+      const half = el.scrollWidth / 2; if (x <= -half) x += half; if (x > 0) x -= half;
+      skew += (-vel * .18 - skew) * .15; skew = Math.max(-6, Math.min(6, skew));
+      el.style.transform = `translate3d(${x}px,0,0) skewX(${skew.toFixed(2)}deg)`;
+    });
+  })();
+
+  // sticky stacked project cards: earlier cards recede as the next slides over
+  const mm = G.matchMedia();
+  mm.add("(min-width: 961px)", () => {
+    const cards = $$(".pcard");
+    const tws = cards.slice(0, -1).map((c, i) => G.timeline({ scrollTrigger: { trigger: cards[i + 1], start: "top bottom", end: "top " + (96 + (i + 1) * 22) + "px", scrub: true } })
+      .to(c, { scale: .94, ease: "none" }, 0).to(c.querySelector(".pcard__shade"), { opacity: .5, ease: "none" }, 0));
+    return () => tws.forEach((t) => { t.scrollTrigger?.kill(); t.kill(); });
+  });
+  G.to("#markFill", { clipPath: "inset(0 0% 0 0)", ease: "none", scrollTrigger: { trigger: "#markWord", start: "top 95%", end: "bottom 55%", scrub: true } });
+  addEventListener("load", () => ST.refresh());
+})();
+</script>
+
+</body>
+</html>
