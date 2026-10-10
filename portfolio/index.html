@@ -115,11 +115,11 @@ button, input, textarea { font: inherit; color: inherit; }
 .nav__ai { position: relative; height: 36px; padding: 0 14px 0 11px; margin-left: 4px; border-radius: 999px; border: 0; background: var(--grad); color: #fff; font: 500 13.5px/1 var(--sans); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
 
 /* hero */
-.hero { position: relative; min-height: min(100dvh, 940px); display: grid; align-items: center; padding-block: 110px 56px; }
+.hero { position: relative; min-height: min(100dvh, 940px); display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; padding-block: 96px 36px; }
 .hero__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(16px, 3vw, 40px); align-items: center; }
-.hero__text { display: grid; gap: 24px; justify-items: start; }
+.hero__text { display: grid; gap: 22px; justify-items: start; }
 .pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(16, 16, 30, .72); font: 400 12.5px/1.3 var(--mono); color: var(--muted); }
-.name { font: 600 clamp(3.6rem, 8.4vw, 8.4rem)/.88 var(--sans); letter-spacing: -.065em; perspective: 900px; }
+.name { font: 600 clamp(3.4rem, 7.4vw, 7.4rem)/.88 var(--sans); letter-spacing: -.065em; perspective: 900px; }
 .name .l { display: block; white-space: nowrap; }
 .name .l2 { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.03em; font-size: 1.1em; padding-right: .1em; }
 .ch { display: inline-block; transform-origin: 50% 100%; will-change: transform; }
@@ -131,7 +131,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .hero__lead { font-size: clamp(1.02rem, 1.4vw, 1.15rem); color: var(--muted); max-width: 42ch; }
 .hero__lead strong { color: var(--fg); font-weight: 500; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; }
-.stage { position: relative; width: 100%; max-width: 640px; aspect-ratio: 1; justify-self: end; touch-action: pan-y; cursor: grab; }
+.stage { position: relative; width: 100%; max-width: 580px; aspect-ratio: 1; justify-self: end; touch-action: pan-y; cursor: grab; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .stage__hint { position: absolute; left: 50%; bottom: -28px; transform: translateX(-50%); font: 11.5px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; display: flex; align-items: center; gap: 10px; pointer-events: none; white-space: nowrap; }
 .stage__hint i { width: 22px; height: 1px; background: var(--dim); }
@@ -146,6 +146,33 @@ button, input, textarea { font: inherit; color: inherit; }
 .scrollcue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: grid; justify-items: center; gap: 8px; font: 10.5px/1 var(--mono); color: var(--dim); letter-spacing: .14em; text-transform: uppercase; }
 .scrollcue i { width: 1px; height: 38px; background: linear-gradient(var(--fg), transparent); transform-origin: top; animation: cue 2s var(--ease) infinite; }
 @keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* value points */
+.points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 580px; }
+.point { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: rgba(16, 16, 30, .74); border: 1px solid var(--line); transition: border-color .3s, transform .5s var(--ease); }
+.point:hover { border-color: var(--line-2); transform: translateY(-2px); }
+.point .pi { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--grad); color: #fff; }
+.point .pi .ic { width: 18px; height: 18px; }
+.point b { display: block; font-weight: 500; font-size: 14.5px; line-height: 1.25; }
+.point span { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+/* life of a deployment */
+.life { margin-top: clamp(22px, 3vw, 34px); display: flex; align-items: center; gap: 18px; padding: 14px 18px; }
+.life__label { font: 11px/1.35 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; }
+.life__label b { display: block; color: var(--fg); font-weight: 500; }
+.life__rail { position: relative; flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; }
+.life__rail::before { content: ""; position: absolute; left: 10px; right: 10px; top: 50%; height: 1px; background: var(--line-2); }
+.life__prog { position: absolute; left: 10px; right: 10px; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--grad); transform-origin: left; transform: scaleX(0); transition: transform .7s var(--ease); }
+.life__step { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: var(--panel-solid); border: 1px solid var(--line-2); font-size: 13px; color: var(--muted); white-space: nowrap; transition: color .3s, background .3s, border-color .3s, transform .4s var(--ease); }
+.life__step i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); transition: background .3s; }
+.life__step.is-done { color: var(--fg); border-color: rgba(162, 116, 255, .45); }
+.life__step.is-done i { background: var(--c2); }
+.life__step.is-on { color: #fff; background: var(--grad); border-color: transparent; transform: scale(1.06); }
+.life__step.is-on i { background: #fff; }
+.life__step.live.is-on, .life__step.live.is-done { background: rgba(94, 224, 160, .14); border-color: rgba(94, 224, 160, .55); color: var(--ok); }
+.life__step.live.is-on i, .life__step.live.is-done i { background: var(--ok); }
+.life__end { font: 11.5px/1.35 var(--mono); color: var(--muted); white-space: nowrap; text-align: right; text-transform: uppercase; letter-spacing: .08em; }
+.life__end b { display: block; color: var(--ok); font-weight: 500; }
 
 /* marquee */
 .band { position: relative; overflow: hidden; padding-block: 22px; border-block: 1px solid var(--line); background: rgba(7, 7, 13, .82); }
@@ -263,6 +290,20 @@ button, input, textarea { font: inherit; color: inherit; }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .legend i { width: 12px; height: 12px; border-radius: 4px; background: var(--grad); }
 .legend i.w { background: transparent; border: 1px solid var(--line-2); }
+
+/* physics playground */
+.play { position: relative; margin-top: 18px; height: 400px; overflow: hidden; border-radius: var(--r-lg); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.play__chip { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 9px; padding: 11px 16px; border-radius: 999px; background: var(--panel-solid); border: 1px solid var(--line-2); font-size: 15px; white-space: nowrap; will-change: transform; cursor: grab; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8); visibility: hidden; }
+.play__chip.is-on { visibility: visible; }
+.play__chip:active { cursor: grabbing; }
+.play__chip svg { width: 20px; height: 20px; }
+.play__chip.g { background: var(--grad); border-color: transparent; color: #fff; }
+.play__bar { position: absolute; left: 18px; right: 18px; top: 16px; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; pointer-events: none; }
+.play__bar p { font: 11.5px/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.play__bar button { pointer-events: auto; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(16, 16, 30, .8); color: var(--fg); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.play__bar button:hover { border-color: var(--c2); }
+.portrait canvas.fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
+.portrait__tag { z-index: 3; }
 
 /* AI section */
 .ai { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(24px, 5vw, 72px); align-items: start; }
@@ -394,6 +435,14 @@ html.lenis, html.lenis body { height: auto; }
 [data-reveal] { transition: opacity 1s var(--ease), transform 1s var(--ease); transition-delay: calc(var(--d, 0) * 90ms); }
 .gsap-on .hero [data-reveal] { transition: none; }
 
+@media (min-width: 961px) and (max-height: 840px) {
+  .hero { padding-block: 84px 24px; }
+  .name { font-size: clamp(3.2rem, 6.2vw, 6.2rem); }
+  .stage { max-width: 480px; }
+  .hero__text { gap: 16px; }
+  .point { padding: 9px 12px; }
+  .life { margin-top: 16px; padding: 11px 16px; }
+}
 @media (max-width: 960px) {
   .nav__links { display: none; }
   .hero { min-height: 0; padding-block: 96px 40px; }
@@ -403,6 +452,10 @@ html.lenis, html.lenis body { height: auto; }
   .ai__intro { position: static; }
   .pcard { position: relative; top: auto; min-height: 0; }
   .scrollcue { display: none; }
+  .life { flex-direction: column; align-items: stretch; gap: 12px; }
+  .life__rail { overflow-x: auto; justify-content: flex-start; padding: 4px 2px 6px; scrollbar-width: none; }
+  .life__rail::before, .life__prog { display: none; }
+  .life__end { text-align: left; }
   .contact { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
@@ -414,6 +467,9 @@ html.lenis, html.lenis body { height: auto; }
   .nav__logo span:last-child { display: none; }
   .seg { border-radius: 22px; }
   .fab__txt, .nudge, .stage__hint { display: none; }
+  .points { grid-template-columns: minmax(0, 1fr); }
+  .play { height: 440px; }
+  .play__chip { font-size: 13.5px; padding: 9px 13px; }
   .fab { padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -433,6 +489,10 @@ html.lenis, html.lenis body { height: auto; }
   <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></symbol>
   <symbol id="i-ne" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8 7h9v9"/></symbol>
   <symbol id="i-spark" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M12 3.5l1.7 5 5 1.7-5 1.7-1.7 5-1.7-5-5-1.7 5-1.7 1.7-5Zm6.5 11 .7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2m-1.5-4.5 4 4M14.5 4.5C17 2 21 3 21 3s1 4-1.5 6.5L12 17l-5-5 7.5-7.5ZM15 9a1.5 1.5 0 1 0 0-.01"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Zm-3.5 9 2.5 2.5 5-5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3 2 8l10 5 10-5-10-5Zm-10 9 10 5 10-5M2 16l10 5 10-5"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M9 9h11v11H9zM5 15H4V4h11v1"/></symbol>
 </svg>
 
@@ -466,7 +526,12 @@ html.lenis, html.lenis body { height: auto; }
           <p class="pill" data-reveal><span class="status"></span>Available for work · Mumbai, IN</p>
           <h1 class="name" aria-label="Rohit Pujari"><span class="l l1" aria-hidden="true">Rohit</span><span class="l l2" aria-hidden="true">Pujari</span></h1>
           <p class="role" data-reveal aria-label="Software Engineer: Backend, Cloud, DevOps, SRE, AIOps"><span aria-hidden="true">Software Engineer / <b class="grad-text" id="roleWord">Cloud</b><span class="caret"></span></span></p>
-          <p class="hero__lead" data-reveal>I build <strong>self-healing cloud systems</strong> with Python, Kubernetes and AWS, and AI that fixes incidents in <strong>25.5 seconds</strong>.</p>
+          <div class="points" data-reveal>
+            <div class="point"><span class="pi"><svg class="ic"><use href="#i-rocket"/></svg></span><p><b>Ships to production</b><span>Code to live on AWS in one push</span></p></div>
+            <div class="point"><span class="pi"><svg class="ic"><use href="#i-pulse"/></svg></span><p><b>Fixes itself</b><span>AI heals incidents in 25.5 s</span></p></div>
+            <div class="point"><span class="pi"><svg class="ic"><use href="#i-shield"/></svg></span><p><b>Stays up</b><span>99.99% uptime, zero-downtime releases</span></p></div>
+            <div class="point"><span class="pi"><svg class="ic"><use href="#i-layers"/></svg></span><p><b>Owns it end to end</b><span>Build · deploy · monitor · scale</span></p></div>
+          </div>
           <div class="hero__cta" data-reveal>
             <a href="#projects" class="btn btn--glow" data-mag data-scr>View projects <svg class="ic"><use href="#i-arrow"/></svg></a>
             <button type="button" class="btn btn--line" data-mag data-chat><svg class="ic"><use href="#i-spark"/></svg> Ask my AI</button>
@@ -478,8 +543,21 @@ html.lenis, html.lenis body { height: auto; }
           <p class="stage__hint"><i></i>Drag to spin my stack<i></i></p>
         </div>
       </div>
+      <div class="glass life" data-reveal aria-label="Life of a deployment: code, test, build, deploy, monitor, heal, live">
+        <p class="life__label">Life of a deployment<b>with Rohit</b></p>
+        <ol class="life__rail" id="life">
+          <span class="life__prog" id="lifeProg" aria-hidden="true"></span>
+          <li class="life__step"><i></i>Code</li>
+          <li class="life__step"><i></i>Test</li>
+          <li class="life__step"><i></i>Build</li>
+          <li class="life__step"><i></i>Deploy</li>
+          <li class="life__step"><i></i>Monitor</li>
+          <li class="life__step"><i></i>Self-heal</li>
+          <li class="life__step live"><i></i>Live</li>
+        </ol>
+        <p class="life__end"><b>Zero downtime</b>every release</p>
+      </div>
     </div>
-    <div class="scrollcue" aria-hidden="true"><i></i>Scroll</div>
   </section>
 
   <div class="band" aria-label="Technologies I use"><div class="band__track" id="band"></div></div>
@@ -622,6 +700,9 @@ html.lenis, html.lenis body { height: auto; }
       </div>
       <div class="glass seg" role="tablist" aria-label="Skill areas" id="seg"></div>
       <div class="glass skillpanel" role="tabpanel" id="skillPanel" aria-live="polite"></div>
+      <div class="glass play" id="play" data-cursor="Grab" aria-label="Physics playground of Rohit's skills: drag and throw the chips">
+        <div class="play__bar"><p>Skill playground · drag &amp; throw</p><button type="button" id="shake"><svg class="ic"><use href="#i-pulse"/></svg> Shake</button></div>
+      </div>
     </div>
   </section>
 
@@ -713,6 +794,7 @@ html.lenis, html.lenis body { height: auto; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
 (() => {
   "use strict";
@@ -741,6 +823,48 @@ html.lenis, html.lenis body { height: auto; }
     const img = new Image(); img.src = PHOTO; img.alt = "Rohit Pujari"; $("#portraitMono").replaceWith(img);
     $$("[data-orb]").forEach((el) => { const i = new Image(); i.src = FACE; i.alt = ""; el.appendChild(i); });
   } else $$("[data-orb]").forEach((el) => { const m = document.createElement("span"); m.className = "orb__m"; m.textContent = "AI"; el.appendChild(m); });
+
+  /* ---------- Portrait: WebGL liquid + RGB-split on hover ---------- */
+  (function portraitFX() {
+    if (!hasPhoto || !window.THREE || reduce) return;
+    const box = $("#portrait"); let r;
+    try { r = new THREE.WebGLRenderer({ antialias: false, alpha: true }); if (!r.getContext()) throw 0; } catch (e) { return; }
+    const T = THREE;
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    r.domElement.className = "fx";
+    const scene = new T.Scene(), cam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const u = { uTex: { value: null }, uMouse: { value: new T.Vector2(.5, .5) }, uHover: { value: 0 }, uTime: { value: 0 } };
+    const mat = new T.ShaderMaterial({ uniforms: u,
+      vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }",
+      fragmentShader: `uniform sampler2D uTex; uniform vec2 uMouse; uniform float uHover, uTime; varying vec2 vUv;
+        void main(){
+          vec2 uv = vUv; float d = distance(uv, uMouse);
+          float wave = uHover * .028 * sin(d * 30.0 - uTime * 6.0) * exp(-d * 4.5);
+          uv += normalize(uv - uMouse + 1e-5) * wave;
+          float s = uHover * .014 * exp(-d * 3.5);
+          vec3 c = vec3(texture2D(uTex, uv + vec2(s, 0.0)).r, texture2D(uTex, uv).g, texture2D(uTex, uv - vec2(s, 0.0)).b);
+          c += uHover * .08 * vec3(.55, .35, 1.0) * exp(-d * 6.0);
+          gl_FragColor = vec4(c, 1.0);
+        }` });
+    scene.add(new T.Mesh(new T.PlaneGeometry(2, 2), mat));
+    let target = 0, tx = .5, ty = .5, raf = 0, last = performance.now();
+    const size = () => r.setSize(box.clientWidth, box.clientHeight, false);
+    const draw = (now) => {
+      const dt = Math.min(.05, (now - last) / 1000); last = now;
+      u.uTime.value += dt; u.uHover.value += (target - u.uHover.value) * .08;
+      u.uMouse.value.x += (tx - u.uMouse.value.x) * .15; u.uMouse.value.y += (ty - u.uMouse.value.y) * .15;
+      r.render(scene, cam);
+      raf = (target > 0 || u.uHover.value > .002) ? requestAnimationFrame(draw) : 0;
+    };
+    const kick = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(draw); } };
+    new T.TextureLoader().load(PHOTO, (tex) => {
+      tex.minFilter = T.LinearFilter; u.uTex.value = tex;
+      size(); box.insertBefore(r.domElement, box.querySelector(".portrait__tag")); r.render(scene, cam);
+      new ResizeObserver(() => { size(); r.render(scene, cam); }).observe(box);
+    });
+    box.addEventListener("pointermove", (e) => { const b = box.getBoundingClientRect(); tx = (e.clientX - b.left) / b.width; ty = 1 - (e.clientY - b.top) / b.height; target = 1; kick(); });
+    box.addEventListener("pointerleave", () => { target = 0; kick(); });
+  })();
 
   /* ---------- Logo band ---------- */
   const logoSvg = (l, color) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="${color ? l.c : "currentColor"}" d="${l.d}"/></svg>`;
@@ -1001,6 +1125,16 @@ html.lenis, html.lenis body { height: auto; }
     requestAnimationFrame(frame);
   })();
 
+  /* ---------- Life of a deployment ---------- */
+  (function life() {
+    const steps = $$("#life .life__step"), prog = $("#lifeProg"), n = steps.length;
+    const set = (k) => { steps.forEach((s, j) => { s.classList.toggle("is-done", j < k); s.classList.toggle("is-on", j === k); }); prog.style.transform = `scaleX(${Math.min(k, n - 1) / (n - 1)})`; };
+    if (reduce) { set(n - 1); return; }
+    let k = 0, h = null;
+    const next = () => { set(k); const end = k === n - 1; k = end ? 0 : k + 1; h = setTimeout(next, end ? 2600 : 800); };
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && !h) { k = 0; next(); } else if (!e.isIntersecting && h) { clearTimeout(h); h = null; } }).observe($("#life"));
+  })();
+
   /* ---------- Project visuals ---------- */
   (function loop() {
     const items = $$("#loop li");
@@ -1073,6 +1207,54 @@ html.lenis, html.lenis body { height: auto; }
         <p class="legend"><span><i></i>Core</span>${c.more.length ? '<span><i class="w"></i>Working knowledge</span>' : ""}</p>`;
     }
     show(0);
+  })();
+
+  /* ---------- Matter.js skill playground ---------- */
+  (function playground() {
+    const box = $("#play");
+    const extra = ["DSA", "OOP", "System design", "REST APIs", "Microservices", "CI/CD", "Chaos engineering", "SQL", "AWS EC2", "IAM", "Groq Llama-3"].slice(0, innerWidth < 640 ? 4 : 11);
+    const make = (html, cls) => { const el = document.createElement("span"); el.className = "play__chip " + (cls || ""); el.innerHTML = html; box.appendChild(el); return el; };
+    const chips = [
+      ...LOGOS.map((l) => make(`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="${l.c}" d="${l.d}"/></svg>${esc(l.n)}`)),
+      ...extra.map((n, i) => make(esc(n), i % 3 === 0 ? "g" : "")),
+    ];
+    if (!window.Matter) { // static fallback: lay chips out as a wrapped cloud
+      box.style.height = "auto"; box.style.padding = "64px 18px 18px"; box.style.display = "flex"; box.style.flexWrap = "wrap"; box.style.gap = "8px";
+      chips.forEach((c) => { c.style.position = "static"; c.classList.add("is-on"); }); return;
+    }
+    const M = Matter, { Engine, Bodies, Composite, Body, Mouse, MouseConstraint } = M;
+    const engine = Engine.create(); engine.gravity.y = 1;
+    let W = box.clientWidth, H = box.clientHeight, walls = [], bodies = [], started = false, on = false, raf = 0;
+    const buildWalls = () => {
+      if (walls.length) Composite.remove(engine.world, walls);
+      const t = 200, o = { isStatic: true };
+      walls = [Bodies.rectangle(W / 2, H + t / 2, W * 3, t, o), Bodies.rectangle(-t / 2, H / 2, t, H * 6, o), Bodies.rectangle(W + t / 2, H / 2, t, H * 6, o), Bodies.rectangle(W / 2, -H * 2.5, W * 3, t, o)];
+      Composite.add(engine.world, walls);
+    };
+    const start = () => {
+      started = true; buildWalls();
+      chips.forEach((el, i) => {
+        const w = el.offsetWidth, h = el.offsetHeight;
+        const b = Bodies.rectangle(40 + Math.random() * Math.max(10, W - 80), -60 - i * 38, w, h, { chamfer: { radius: h / 2 }, restitution: .45, friction: .08, frictionAir: .012, density: .002 });
+        Body.setAngle(b, (Math.random() - .5) * .8); b.el = el; b.w = w; b.h = h; bodies.push(b); el.classList.add("is-on");
+      });
+      Composite.add(engine.world, bodies);
+      if (fine) {
+        const mouse = Mouse.create(box);
+        ["mousewheel", "DOMMouseScroll"].forEach((ev) => mouse.element.removeEventListener(ev, mouse.mousewheel));
+        mouse.element.removeEventListener("touchmove", mouse.mousemove); mouse.element.removeEventListener("touchstart", mouse.mousedown); mouse.element.removeEventListener("touchend", mouse.mouseup);
+        Composite.add(engine.world, MouseConstraint.create(engine, { mouse, constraint: { stiffness: .18, damping: .1, render: { visible: false } } }));
+      } else box.addEventListener("click", shake);
+    };
+    const step = () => {
+      Engine.update(engine, 1000 / 60);
+      for (const b of bodies) b.el.style.transform = `translate(${(b.position.x - b.w / 2).toFixed(1)}px, ${(b.position.y - b.h / 2).toFixed(1)}px) rotate(${b.angle.toFixed(3)}rad)`;
+      raf = on ? requestAnimationFrame(step) : 0;
+    };
+    function shake() { bodies.forEach((b) => Body.setVelocity(b, { x: (Math.random() - .5) * 18, y: -10 - Math.random() * 14 })); }
+    $("#shake").addEventListener("click", (e) => { e.stopPropagation(); shake(); });
+    new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on) { if (!started) start(); if (!raf) raf = requestAnimationFrame(step); } }, { threshold: .25 }).observe(box);
+    new ResizeObserver(() => { const nw = box.clientWidth, nh = box.clientHeight; if (!started || (nw === W && nh === H)) return; W = nw; H = nh; buildWalls(); bodies.forEach((b) => { if (b.position.x > W - 20) Body.setPosition(b, { x: W - 40, y: b.position.y }); }); }).observe(box);
   })();
 
   /* ---------- Role-fit analyzer ---------- */
@@ -1236,7 +1418,9 @@ html.lenis, html.lenis body { height: auto; }
   $$("#chatChips button").forEach((b) => b.addEventListener("click", () => ask(b.textContent)));
   $("#nudgeX").addEventListener("click", (e) => { e.stopPropagation(); nudge.hidden = true; });
   nudge.addEventListener("click", () => openChat());
-  setTimeout(() => { if (chat.hidden && !greeted) { nudge.hidden = false; setTimeout(() => { nudge.hidden = true; }, 9000); } }, 7000);
+  let nudged = false;
+  const tryNudge = () => { if (nudged || !chat.hidden || greeted || scrollY < innerHeight * .7) return; nudged = true; nudge.hidden = false; setTimeout(() => { nudge.hidden = true; }, 9000); removeEventListener("scroll", tryNudge); };
+  setTimeout(() => { addEventListener("scroll", tryNudge, { passive: true }); tryNudge(); }, 4000);
 
   /* ================= Motion: Lenis + GSAP ================= */
   const G = window.gsap, ST = window.ScrollTrigger, loader = $("#loader");
